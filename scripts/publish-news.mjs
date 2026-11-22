@@ -32,9 +32,35 @@ async function main() {
     throw new Error('SUPABASE_URL no es una URL https válida');
   }
 
-  const db = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY.trim(), {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
+  
+const db = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY.trim(), {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  },
+  global: {
+    fetch: async (input, init) => {
+      try {
+        const response = await fetch(input, init);
+        console.log(`Supabase HTTP: ${response.status}`);
+
+        if (!response.ok) {
+          const data = await response.clone().json().catch(() => null);
+          console.error('Supabase error:', JSON.stringify({
+            status: response.status,
+            code: typeof data?.code === 'string' ? data.code : null
+          }));
+        }
+
+        return response;
+      } catch (error) {
+        console.error('Supabase conexión:', error?.name || 'Error desconocido');
+        throw error;
+      }
+    }
+  }
+});
+
   const ai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY.trim() });
   const parser = new Parser({ timeout: 12000, headers: { 'User-Agent': 'GTA6HubBot/1.0' } });
   const feeds = [
