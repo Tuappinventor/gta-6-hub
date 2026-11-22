@@ -1,0 +1,7 @@
+{
+  "name": "gta6-hub-autonews",
+  "private": true,
+  "type": "module",
+  "scripts": {"news": "node scripts/publish-news.mjs"},
+  "dependencies": {"@supabase/supabase-js": "^2.49.0", "openai": "^4.87.0", "rss-parser": "^3.13.0"}
+}
