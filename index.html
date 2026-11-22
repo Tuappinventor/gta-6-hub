@@ -1,1 +1,446 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VICE HUB | Comunidad independiente GTA 6</title><style>:root{font-family:Inter,system-ui,Arial;background:#090c16;color:#f7f8ff}*{box-sizing:border-box}body{margin:0}header{position:sticky;top:0;background:#0c1020ee;backdrop-filter:blur(12px);border-bottom:1px solid #283048;z-index:2;padding:15px max(18px,calc((100vw - 1150px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px}.logo{font-weight:900;letter-spacing:2px;font-size:22px}.logo span{color:#fa4a9a}nav{display:flex;gap:8px;flex-wrap:wrap}button,input,select{font:inherit}button{border:1px solid #343a56;background:#181f35;color:white;border-radius:12px;padding:10px 14px;cursor:pointer}button:hover,.active{background:#e63f88;border-color:#e63f88}main{max-width:1150px;margin:auto;padding:24px 18px}.hero{background:radial-gradient(ellipse at 80% 20%,#70205b 0,transparent 50%),linear-gradient(130deg,#181c39,#10162b);border:1px solid #34324e;border-radius:24px;padding:48px 30px;margin-bottom:28px}.eyebrow{color:#ff88c1;font-size:12px;letter-spacing:2px;font-weight:800}.hero h1{font-size:clamp(35px,6vw,70px);line-height:1.05;margin:12px 0}.hero p{color:#b8c0d7;max-width:600px;line-height:1.6}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.primary{background:#ed408e;border-color:#ed408e}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:30px}.stat,.card,.panel{border:1px solid #30364f;background:#111729;border-radius:17px;padding:19px}.stat strong{font-size:26px;display:block}.muted{color:#a5aec9}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:15px}.card h3{margin:12px 0}.tag{color:#ff88bf;font-size:12px;text-transform:uppercase;font-weight:bold}.section{display:none}.section.active{display:block;background:transparent}.section h2{font-size:28px}.tools{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0}input,select{background:#161e34;color:white;border:1px solid #3b4562;padding:11px;border-radius:10px;min-width:190px}.map{position:relative;min-height:370px;border:1px solid #444267;border-radius:18px;overflow:hidden;background:radial-gradient(circle at 30% 30%,#4a3864,transparent 35%),radial-gradient(circle at 80% 65%,#173e55,transparent 35%),repeating-linear-gradient(45deg,#141d31 0px,#141d31 26px,#1d2940 27px,#1d2940 29px)}.map:before{content:'MAPA COMUNITARIO · ESQUEMA DEMOSTRATIVO';position:absolute;top:14px;left:14px;color:#d3d7e9;font-size:11px;letter-spacing:1px}.pin{position:absolute;border-radius:30px;padding:9px;background:#f04b9b;border:2px solid white;font-weight:bold}.pin.done{background:#28a88b}.note{font-size:13px;color:#aeb8d3}.empty{padding:24px;color:#abb4cd}.footer{padding:35px 18px;text-align:center;border-top:1px solid #283048;color:#a5aec9;font-size:13px}a{color:#ff8fc4}@media(max-width:650px){header{align-items:flex-start;flex-direction:column}nav button{font-size:12px;padding:8px}.hero{padding:28px 20px}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:span 2}} .authbox{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0}.authbox input{min-width:150px;flex:1}.status{padding:12px;border:1px solid #414766;border-radius:12px;margin:12px 0}.editor-form{display:grid;gap:10px;max-width:720px}.editor-form textarea{min-height:150px;background:#161e34;color:white;border:1px solid #3b4562;padding:12px;border-radius:10px;font:inherit}.hidden{display:none!important} </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script></head><body><header><div class="logo">VICE<span>HUB</span></div><nav id="nav"><button class="active" data-page="inicio">Inicio</button><button data-page="noticias">Noticias</button><button data-page="mapa">Mapa</button><button data-page="vehiculos">Vehículos</button><button data-page="guias">Guías</button><button data-page="perfil">Mi progreso</button><button data-page="editor">Editorial</button></nav></header><main><section class="section active" id="inicio"><div class="hero"><div class="eyebrow">PLATAFORMA INDEPENDIENTE · GTA VI</div><h1>Tu aventura.<br><span style="color:#ff66ab">Tu ciudad.</span><br>Tu comunidad.</h1><p>Noticias, guías, vehículos y un mapa colaborativo. Guarda tus descubrimientos y prepara tu propia ruta.</p><div class="actions"><button class="primary" data-go="mapa">Explorar mapa</button><button data-go="noticias">Ver noticias</button></div></div><div class="stats"><div class="stat"><strong id="snews">0</strong><span class="muted">Artículos de ejemplo</span></div><div class="stat"><strong id="spins">0</strong><span class="muted">Marcadores de ejemplo</span></div><div class="stat"><strong id="sdone">0</strong><span class="muted">Descubiertos por ti</span></div></div><h2>Explora Vice Hub</h2><div class="grid"><div class="card"><span class="tag">ACTUALIDAD</span><h3>Noticias y novedades</h3><p class="muted">Organiza las últimas novedades con fuentes verificadas.</p><button data-go="noticias">Explorar</button></div><div class="card"><span class="tag">EXPLORACIÓN</span><h3>Mapa interactivo</h3><p class="muted">Marca lugares como visitados y guarda tu progreso.</p><button data-go="mapa">Abrir mapa</button></div><div class="card"><span class="tag">COLECCIÓN</span><h3>Garaje virtual</h3><p class="muted">Consulta un catálogo preparado para incorporar vehículos verificados.</p><button data-go="vehiculos">Ver vehículos</button></div></div></section><section class="section" id="noticias"><h2>Noticias</h2><p class="muted">Ejemplos editoriales, no noticias actuales. La integración RSS llegará con el backend.</p><div class="tools"><input id="newsSearch" placeholder="Buscar artículos..."></div><div class="grid" id="newsGrid"></div></section><section class="section" id="mapa"><h2>Mapa interactivo</h2><p class="muted">Marcadores ficticios para probar la interfaz. No representan ubicaciones reales del juego.</p><div class="tools"><select id="mapFilter"><option value="all">Todas las categorías</option><option value="interes">Interés</option><option value="vehiculo">Vehículos</option><option value="secreto">Secretos</option></select><button id="clearProgress">Reiniciar progreso</button></div><div class="map" id="mapCanvas"></div><p class="note">Pulsa un marcador para alternar entre pendiente y descubierto. El progreso se guarda en este navegador.</p><div id="mapList" class="grid"></div></section><section class="section" id="vehiculos"><h2>Garaje</h2><p class="muted">Catálogo demostrativo con entradas ficticias. No se presentan como vehículos confirmados.</p><div class="tools"><input id="vehicleSearch" placeholder="Buscar vehículo..."><select id="vehicleFilter"><option value="all">Todos los tipos</option><option value="Deportivo">Deportivo</option><option value="Moto">Moto</option><option value="Todoterreno">Todoterreno</option></select></div><div class="grid" id="vehicleGrid"></div></section><section class="section" id="guias"><h2>Guías</h2><p class="muted">Estructura preparada para artículos verificados.</p><div class="grid"><div class="card"><span class="tag">PRÓXIMAMENTE</span><h3>Primeros pasos</h3><p>Consejos para empezar, pendientes de revisión editorial.</p></div><div class="card"><span class="tag">PRÓXIMAMENTE</span><h3>Exploración</h3><p>Guías de localizaciones y coleccionables.</p></div><div class="card"><span class="tag">PRÓXIMAMENTE</span><h3>Vehículos</h3><p>Fichas y comparativas verificadas.</p></div></div></section><section class="section" id="editor"><h2>Panel editorial</h2><p class="muted">Acceso restringido a editores y administradores. Publicación manual.</p><div id="editorGate" class="status">Conecta Supabase e inicia sesión con una cuenta autorizada.</div><div id="editorWorkspace" class="hidden"><form id="articleForm" class="editor-form"><input id="articleTitle" required maxlength="180" placeholder="Título del artículo"><input id="articleSlug" required maxlength="200" pattern="[a-z0-9-]+" placeholder="slug-del-articulo"><select id="articleKind"><option value="news">Noticia</option><option value="guide">Guía</option></select><textarea id="articleSummary" maxlength="600" placeholder="Resumen"></textarea><textarea id="articleBody" required placeholder="Contenido original y verificado"></textarea><select id="articleStatus"><option value="draft">Borrador</option><option value="review">En revisión</option><option value="published">Publicar</option></select><button class="primary" type="submit">Guardar artículo</button></form><p id="editorMessage" role="status"></p><h3>Artículos del equipo</h3><div id="editorArticles" class="grid"></div></div></section><section class="section" id="perfil"><h2>Mi progreso</h2><div class="panel"><h3>Cuenta y progreso</h3><div id="connectionStatus" class="status">Modo demostración · datos locales</div><div class="authbox"><input id="email" type="email" placeholder="Correo electrónico" autocomplete="email"><input id="password" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password"><button id="signUp">Registrarme</button><button id="signIn">Entrar</button><button id="signOut">Salir</button></div><p id="authMessage" role="status"></p><h3>Alias</h3><p class="muted">Sin conexión funciona como demo local. Con Supabase activado, tu cuenta y progreso se sincronizan.</p><label>Tu alias <input id="alias" maxlength="35" placeholder="Tu alias"></label><button id="saveAlias">Guardar alias</button><p id="hello"></p><p id="progressSummary"></p></div></section></main><div class="footer">VICE HUB · Proyecto de fans independiente, no afiliado a Rockstar Games ni Take-Two Interactive. Sin contenido oficial reproducido.</div><script>const articles=[{title:'Bienvenido a Vice Hub',cat:'Comunidad',text:'Conoce los módulos que estamos preparando para los jugadores.'},{title:'Cómo funcionará el mapa colaborativo',cat:'Desarrollo',text:'Marcadores, categorías, progreso personal y moderación.'},{title:'Fuentes y verificación editorial',cat:'Transparencia',text:'Cómo diferenciaremos noticias confirmadas de rumores.'}];const pins=[{id:'a',name:'Punto de interés A',cat:'interes',x:24,y:32},{id:'b',name:'Punto de interés B',cat:'vehiculo',x:66,y:53},{id:'c',name:'Punto de interés C',cat:'secreto',x:44,y:76}];const vehicles=[{name:'Concepto deportivo A',type:'Deportivo'},{name:'Concepto moto B',type:'Moto'},{name:'Concepto 4x4 C',type:'Todoterreno'}];let progress;try{progress=JSON.parse(localStorage.getItem('vicehub_progress')||'{}')}catch{progress={}};function save(){localStorage.setItem('vicehub_progress',JSON.stringify(progress))}function page(id){document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===id));document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===id));render();window.scrollTo(0,0)}document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>page(b.dataset.go));function render(){document.getElementById('snews').textContent=articles.length;document.getElementById('spins').textContent=pins.length;document.getElementById('sdone').textContent=pins.filter(p=>progress[p.id]).length;document.getElementById('progressSummary').textContent=`Descubiertos: ${pins.filter(p=>progress[p.id]).length} de ${pins.length} marcadores de ejemplo`;document.getElementById('hello').textContent=localStorage.getItem('vicehub_alias')?'Hola, '+localStorage.getItem('vicehub_alias'):'';const q=document.getElementById('newsSearch').value.toLowerCase();document.getElementById('newsGrid').innerHTML=articles.filter(a=>(a.title+a.text).toLowerCase().includes(q)).map(a=>`<article class="card"><span class="tag">${a.cat}</span><h3>${a.title}</h3><p class="muted">${a.text}</p></article>`).join('')||'<p class="empty">Sin resultados</p>';const f=document.getElementById('mapFilter').value;const shown=pins.filter(p=>f==='all'||p.cat===f);document.getElementById('mapCanvas').innerHTML=shown.map(p=>`<button class="pin ${progress[p.id]?'done':''}" style="left:${p.x}%;top:${p.y}%" data-pin="${p.id}" title="${p.name}">${progress[p.id]?'✓':'●'}</button>`).join('');document.getElementById('mapList').innerHTML=shown.map(p=>`<div class="card"><span class="tag">${p.cat}</span><h3>${p.name}</h3><button data-pin="${p.id}">${progress[p.id]?'✓ Descubierto':'Marcar descubierto'}</button></div>`).join('');document.querySelectorAll('[data-pin]').forEach(b=>b.onclick=()=>{progress[b.dataset.pin]=!progress[b.dataset.pin];save();render()});const vq=document.getElementById('vehicleSearch').value.toLowerCase(),vf=document.getElementById('vehicleFilter').value;document.getElementById('vehicleGrid').innerHTML=vehicles.filter(v=>v.name.toLowerCase().includes(vq)&&(vf==='all'||vf===v.type)).map(v=>`<div class="card"><span class="tag">${v.type}</span><h3>${v.name}</h3><p class="muted">Ficha de demostración</p></div>`).join('')||'<p class="empty">Sin resultados</p>'}['newsSearch','mapFilter','vehicleSearch','vehicleFilter'].forEach(id=>document.getElementById(id).addEventListener('input',render));document.getElementById('clearProgress').onclick=()=>{if(confirm('¿Borrar el progreso local?')){progress={};save();render()}};document.getElementById('saveAlias').onclick=()=>{localStorage.setItem('vicehub_alias',document.getElementById('alias').value.trim());render()};document.getElementById('alias').value=localStorage.getItem('vicehub_alias')||'';render();</script><script src="config.js"></script><script src="backend.js"></script></body></html>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VICE HUB | GTA 6 Hub</title>
+
+<style>
+:root {
+  font-family: Inter, system-ui, Arial, sans-serif;
+  background: #090c16;
+  color: #f7f8ff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #0c1020ee;
+  border-bottom: 1px solid #283048;
+  padding: 16px;
+}
+.logo {
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin-bottom: 18px;
+}
+.logo span { color: #fa4a9a; }
+nav, .tools, .actions, .authbox {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+button, input, select, textarea {
+  font: inherit;
+  border: 1px solid #3b4562;
+  border-radius: 12px;
+  padding: 12px;
+}
+button {
+  background: #181f35;
+  color: white;
+  cursor: pointer;
+}
+button:hover, button.active, .primary {
+  background: #e63f88;
+  border-color: #e63f88;
+}
+input, select, textarea {
+  background: #161e34;
+  color: white;
+  max-width: 100%;
+}
+main {
+  max-width: 1150px;
+  margin: auto;
+  padding: 24px 18px;
+}
+.hero {
+  background: radial-gradient(circle at 80% 20%, #70205b, transparent 50%), #151a32;
+  border: 1px solid #34324e;
+  border-radius: 24px;
+  padding: 45px 28px;
+}
+.hero h1 {
+  font-size: clamp(35px, 7vw, 65px);
+  line-height: 1.1;
+}
+.hero h1 span { color: #ff66ab; }
+.hero p, .muted { color: #b8c0d7; }
+.hero p { line-height: 1.7; }
+.stats, .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+  margin: 22px 0;
+}
+.stat, .card, .panel {
+  border: 1px solid #30364f;
+  background: #111729;
+  border-radius: 18px;
+  padding: 20px;
+}
+.stat strong {
+  display: block;
+  font-size: 28px;
+}
+.section { display: none; }
+.section.active { display: block; }
+.section h2 { font-size: 28px; }
+.tag {
+  color: #ff88bf;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.map {
+  position: relative;
+  min-height: 370px;
+  overflow: hidden;
+  border: 1px solid #444267;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 30% 30%, #4a3864, transparent 35%),
+    radial-gradient(circle at 80% 65%, #173e55, transparent 35%),
+    repeating-linear-gradient(45deg, #141d31 0 26px, #1d2940 27px 29px);
+}
+.map:before {
+  content: "MAPA DEMOSTRATIVO";
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  font-size: 12px;
+  color: #d3d7e9;
+}
+.pin {
+  position: absolute;
+  border: 2px solid white;
+  border-radius: 30px;
+  background: #f04b9b;
+  padding: 9px;
+}
+.pin.done { background: #28a88b; }
+.status {
+  border: 1px solid #414766;
+  border-radius: 12px;
+  padding: 15px;
+  margin: 15px 0;
+}
+.editor-form {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+}
+.editor-form textarea { min-height: 120px; }
+.hidden { display: none !important; }
+.empty { padding: 20px; color: #abb4cd; }
+.note { color: #aeb8d3; font-size: 13px; }
+.footer {
+  text-align: center;
+  border-top: 1px solid #283048;
+  padding: 35px 18px;
+  color: #a5aec9;
+  font-size: 13px;
+}
+@media(max-width:650px) {
+  nav button { font-size: 12px; padding: 9px; }
+  .hero { padding: 28px 20px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .authbox input { width: 100%; }
+}
+</style>
+
+<!-- Configuración pública -->
+<script src="./config.js"></script>
+
+<!-- Biblioteca Supabase: cargar antes del backend -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">VICE<span>HUB</span></div>
+  <nav id="nav">
+    <button class="active" data-page="inicio">Inicio</button>
+    <button data-page="noticias">Noticias</button>
+    <button data-page="mapa">Mapa</button>
+    <button data-page="vehiculos">Vehículos</button>
+    <button data-page="guias">Guías</button>
+    <button data-page="perfil">Mi progreso</button>
+    <button data-page="editor">Editorial</button>
+  </nav>
+</header>
+
+<main>
+
+<section class="section active" id="inicio">
+  <div class="hero">
+    <div class="tag">PLATAFORMA INDEPENDIENTE · GTA VI</div>
+    <h1>Tu aventura.<br><span>Tu ciudad.</span><br>Tu comunidad.</h1>
+    <p>Noticias, guías, vehículos y mapa colaborativo. Guarda tus descubrimientos y participa en la comunidad.</p>
+    <div class="actions">
+      <button class="primary" data-go="mapa">Explorar mapa</button>
+      <button data-go="noticias">Ver noticias</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><strong id="snews">0</strong><span class="muted">Artículos de ejemplo</span></div>
+    <div class="stat"><strong id="spins">0</strong><span class="muted">Marcadores de ejemplo</span></div>
+    <div class="stat"><strong id="sdone">0</strong><span class="muted">Descubiertos por ti</span></div>
+  </div>
+
+  <h2>Explora Vice Hub</h2>
+  <div class="grid">
+    <div class="card">
+      <span class="tag">ACTUALIDAD</span>
+      <h3>Noticias</h3>
+      <p class="muted">Noticias y novedades de GTA 6.</p>
+      <button data-go="noticias">Explorar</button>
+    </div>
+    <div class="card">
+      <span class="tag">EXPLORACIÓN</span>
+      <h3>Mapa interactivo</h3>
+      <p class="muted">Guarda tus descubrimientos.</p>
+      <button data-go="mapa">Abrir mapa</button>
+    </div>
+    <div class="card">
+      <span class="tag">COLECCIÓN</span>
+      <h3>Garaje virtual</h3>
+      <p class="muted">Consulta vehículos y categorías.</p>
+      <button data-go="vehiculos">Ver vehículos</button>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="noticias">
+  <h2>Noticias</h2>
+  <p class="muted">Contenido de demostración hasta publicar artículos verificados.</p>
+  <div class="tools">
+    <input id="newsSearch" placeholder="Buscar artículos...">
+  </div>
+  <div id="newsGrid" class="grid"></div>
+</section>
+
+<section class="section" id="mapa">
+  <h2>Mapa interactivo</h2>
+  <p class="muted">Marcadores ficticios para probar el funcionamiento.</p>
+  <div class="tools">
+    <select id="mapFilter">
+      <option value="all">Todas las categorías</option>
+      <option value="interes">Interés</option>
+      <option value="vehiculo">Vehículos</option>
+      <option value="secreto">Secretos</option>
+    </select>
+    <button id="clearProgress">Reiniciar progreso</button>
+  </div>
+  <div class="map" id="mapCanvas"></div>
+  <p class="note">Pulsa los marcadores para registrar descubrimientos.</p>
+  <div id="mapList" class="grid"></div>
+</section>
+
+<section class="section" id="vehiculos">
+  <h2>Garaje</h2>
+  <p class="muted">Vehículos de ejemplo, pendientes de contenido verificado.</p>
+  <div class="tools">
+    <input id="vehicleSearch" placeholder="Buscar vehículo...">
+    <select id="vehicleFilter">
+      <option value="all">Todos los tipos</option>
+      <option value="Deportivo">Deportivo</option>
+      <option value="Moto">Moto</option>
+      <option value="Todoterreno">Todoterreno</option>
+    </select>
+  </div>
+  <div id="vehicleGrid" class="grid"></div>
+</section>
+
+<section class="section" id="guias">
+  <h2>Guías</h2>
+  <p class="muted">Guías originales y verificadas.</p>
+  <div class="grid">
+    <div class="card"><h3>Primeros pasos</h3><p>Próximamente.</p></div>
+    <div class="card"><h3>Exploración</h3><p>Próximamente.</p></div>
+    <div class="card"><h3>Vehículos</h3><p>Próximamente.</p></div>
+  </div>
+</section>
+
+<section class="section" id="editor">
+  <h2>Panel editorial</h2>
+  <p class="muted">Gestión de artículos para editores y administradores.</p>
+  <div id="editorGate" class="status">Inicia sesión con una cuenta autorizada.</div>
+
+  <div id="editorWorkspace" class="hidden">
+    <form id="articleForm" class="editor-form">
+      <input id="articleTitle" required maxlength="180" placeholder="Título del artículo">
+      <input id="articleSlug" required maxlength="200" pattern="[a-z0-9-]+" placeholder="slug-del-articulo">
+      <select id="articleKind">
+        <option value="news">Noticia</option>
+        <option value="guide">Guía</option>
+      </select>
+      <textarea id="articleSummary" maxlength="600" placeholder="Resumen"></textarea>
+      <textarea id="articleBody" required placeholder="Contenido original y verificado"></textarea>
+      <select id="articleStatus">
+        <option value="draft">Borrador</option>
+        <option value="review">En revisión</option>
+        <option value="published">Publicar</option>
+      </select>
+      <button class="primary" type="submit">Guardar artículo</button>
+    </form>
+    <p id="editorMessage" role="status"></p>
+    <h3>Artículos del equipo</h3>
+    <div id="editorArticles" class="grid"></div>
+  </div>
+</section>
+
+<section class="section" id="perfil">
+  <h2>Mi progreso</h2>
+  <div class="panel">
+    <h3>Cuenta y progreso</h3>
+    <div id="connectionStatus" class="status">Comprobando conexión...</div>
+
+    <div class="authbox">
+      <input id="email" type="email" placeholder="Correo electrónico" autocomplete="email">
+      <input id="password" type="password" placeholder="Contraseña (mínimo 6 caracteres)">
+      <button id="signUp">Registrarme</button>
+      <button id="signIn">Entrar</button>
+      <button id="signOut">Salir</button>
+    </div>
+
+    <p id="authMessage" role="status"></p>
+    <h3>Alias</h3>
+    <p class="muted">Con Supabase activado, tu cuenta y progreso podrán sincronizarse.</p>
+    <label>Tu alias
+      <input id="alias" maxlength="35" placeholder="Tu alias">
+    </label>
+    <button id="saveAlias">Guardar alias</button>
+    <p id="hello"></p>
+    <p id="progressSummary"></p>
+  </div>
+</section>
+
+</main>
+
+<div class="footer">
+  VICE HUB · Proyecto independiente de fans.
+  No afiliado a Rockstar Games ni Take-Two Interactive.
+</div>
+
+<script>
+const articles = [
+  {title:"Bienvenido a Vice Hub",cat:"Comunidad",text:"Descubre nuestra plataforma."},
+  {title:"Mapa colaborativo",cat:"Desarrollo",text:"Descubre lugares y guarda tu progreso."},
+  {title:"Verificación editorial",cat:"Noticias",text:"Diferenciamos información confirmada y rumores."}
+];
+
+const pins = [
+  {id:"a",name:"Punto de interés A",cat:"interes",x:24,y:32},
+  {id:"b",name:"Punto de interés B",cat:"vehiculo",x:66,y:53},
+  {id:"c",name:"Punto de interés C",cat:"secreto",x:44,y:76}
+];
+
+const vehicles = [
+  {name:"Concepto deportivo A",type:"Deportivo"},
+  {name:"Concepto moto B",type:"Moto"},
+  {name:"Concepto 4x4 C",type:"Todoterreno"}
+];
+
+let progress;
+try {
+  progress = JSON.parse(localStorage.getItem("vicehub_progress") || "{}");
+} catch {
+  progress = {};
+}
+
+function save() {
+  localStorage.setItem("vicehub_progress",JSON.stringify(progress));
+}
+
+function page(id) {
+  document.querySelectorAll(".section").forEach(s =>
+    s.classList.toggle("active",s.id===id)
+  );
+  document.querySelectorAll("[data-page]").forEach(b =>
+    b.classList.toggle("active",b.dataset.page===id)
+  );
+  render();
+  window.scrollTo(0,0);
+}
+
+document.querySelectorAll("[data-page]").forEach(b =>
+  b.onclick=()=>page(b.dataset.page)
+);
+document.querySelectorAll("[data-go]").forEach(b =>
+  b.onclick=()=>page(b.dataset.go)
+);
+
+function render() {
+  document.getElementById("snews").textContent=articles.length;
+  document.getElementById("spins").textContent=pins.length;
+  document.getElementById("sdone").textContent=pins.filter(p=>progress[p.id]).length;
+  document.getElementById("progressSummary").textContent=
+    `Descubiertos: ${pins.filter(p=>progress[p.id]).length} de ${pins.length} marcadores de ejemplo`;
+
+  const q=document.getElementById("newsSearch").value.toLowerCase();
+  document.getElementById("newsGrid").innerHTML=
+    articles.filter(a=>(a.title+a.text).toLowerCase().includes(q))
+    .map(a=>`<article class="card"><span class="tag">${a.cat}</span><h3>${a.title}</h3><p class="muted">${a.text}</p></article>`)
+    .join("") || '<p class="empty">Sin resultados</p>';
+
+  const f=document.getElementById("mapFilter").value;
+  const shown=pins.filter(p=>f==="all"||p.cat===f);
+
+  document.getElementById("mapCanvas").innerHTML=
+    shown.map(p=>`<button class="pin ${progress[p.id]?"done":""}" style="left:${p.x}%;top:${p.y}%" data-pin="${p.id}">${progress[p.id]?"✓":"●"}</button>`).join("");
+
+  document.getElementById("mapList").innerHTML=
+    shown.map(p=>`<div class="card"><span class="tag">${p.cat}</span><h3>${p.name}</h3><button data-pin="${p.id}">${progress[p.id]?"✓ Descubierto":"Marcar descubierto"}</button></div>`).join("");
+
+  document.querySelectorAll("[data-pin]").forEach(b=>b.onclick=()=>{
+    progress[b.dataset.pin]=!progress[b.dataset.pin];
+    save();
+    render();
+  });
+
+  const vq=document.getElementById("vehicleSearch").value.toLowerCase();
+  const vf=document.getElementById("vehicleFilter").value;
+
+  document.getElementById("vehicleGrid").innerHTML=
+    vehicles.filter(v=>v.name.toLowerCase().includes(vq)&&(vf==="all"||vf===v.type))
+    .map(v=>`<div class="card"><span class="tag">${v.type}</span><h3>${v.name}</h3><p class="muted">Ficha demostrativa</p></div>`)
+    .join("") || '<p class="empty">Sin resultados</p>';
+}
+
+["newsSearch","mapFilter","vehicleSearch","vehicleFilter"].forEach(id=>
+  document.getElementById(id).addEventListener("input",render)
+);
+
+document.getElementById("clearProgress").onclick=()=>{
+  if(confirm("¿Borrar el progreso local?")){
+    progress={};
+    save();
+    render();
+  }
+};
+
+document.getElementById("saveAlias").onclick=()=>{
+  localStorage.setItem("vicehub_alias",document.getElementById("alias").value.trim());
+  document.getElementById("hello").textContent=
+    "Hola, "+document.getElementById("alias").value.trim();
+};
+
+document.getElementById("alias").value=
+  localStorage.getItem("vicehub_alias")||"";
+
+render();
+</script>
+
+<!-- Backend después de cargar Supabase y crear la interfaz -->
+<script src="./backend.js"></script>
+
+</body>
+</html>
