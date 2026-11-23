@@ -1,0 +1,19 @@
+VICE HUB - NOTICIAS V2
+
+Este paquete conserva index.html, backend.js y el panel editorial existente.
+
+1. En GitHub, repositorio Tuappinventor/gta-6-hub, sube los archivos news-ui.js y news-ui.css a la RAIZ del repositorio (Add file > Upload files > Commit changes).
+2. Abre index.html y edita el archivo.
+3. Justo ANTES de </head> añade:
+   <link rel="stylesheet" href="./news-ui.css">
+4. Justo ANTES de </body> añade:
+   <script src="./news-ui.js"></script>
+5. Guarda con Commit changes. Vercel desplegara automaticamente.
+
+NO subas el ZIP tal cual: hay que subir los dos archivos que contiene.
+NO modifiques config.js ni pongas claves secretas en el navegador.
+
+Funciones: noticias desde Supabase, tarjetas, busqueda, filtro noticias/guias, articulo completo, fuente enlazada, compartir, URL ?articulo=slug, responsive.
+Imagenes: fondos graficos decorativos, NO fotografias reales. Para fotografias verificadas se necesitara agregar image_url y gestionar licencias.
+
+ATENCION: una noticia automatica anterior contenia cifras no verificadas. Revisa esa noticia desde el panel editorial antes de promocionar la web. El nuevo frontend no verifica el contenido por si solo.
