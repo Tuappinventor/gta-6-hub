@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VICE HUB | Leonida Maps 5.1</title>
+<title>VICE HUB | Leonida Maps 5.2</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#090d19;color:#f5f6fc;font:15px system-ui,Arial}
 header{padding:13px 16px;background:#141b2b;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -23,13 +23,41 @@ input,select{width:100%;margin-bottom:9px}button{cursor:pointer}
 #notice{position:absolute;bottom:8px;right:8px;background:#10192bc9;padding:5px 7px;border-radius:6px;font-size:10px;max-width:190px;pointer-events:none}
 #detail:not([hidden])~#notice{display:none}
 #status{color:#ffb2d5;font-size:13px}
+.editor-panel{border:1px solid #4b5c77;border-radius:12px;padding:12px;margin:12px 0;background:#19253b}
+.editor-panel label{display:block;font-size:12px;color:#c9d5e7;margin-top:7px}
+.editor-panel textarea{width:100%;min-height:65px;background:#1c2942;color:#fff;border:1px solid #4c5673;border-radius:8px;padding:8px;font:inherit}
+.editor-panel button{margin:5px 4px 5px 0}
+.editor-panel button.active{background:#a72d74}
+.editor-panel .row{display:flex;flex-wrap:wrap;gap:5px}
+.editor-panel .row button{flex:1}
+#editorForm[hidden],#editorPanel[hidden]{display:none}
+#editorPanel input,#editorPanel select{margin-bottom:5px}
+.marker.editing{outline:3px solid #ffdd69;cursor:grab}
+.marker.dragging-marker{cursor:grabbing}
+#stage.adding{cursor:crosshair}
+#editHelp{font-size:12px;color:#ffdb9c}
 @media(max-width:700px){.layout{display:flex;flex-direction:column;height:calc(100dvh - 53px)}#stage{flex:1;min-height:55vh}aside{order:2;max-height:32vh;padding:10px}#items{grid-template-columns:repeat(2,minmax(0,1fr))}header{font-size:14px}}
 </style></head><body>
-<header><strong>VICE <b>HUB</b> · LEONIDA MAPS 5.1</strong><a href="./index.html">Volver a VICE HUB</a></header>
+<header><strong>VICE <b>HUB</b> · LEONIDA MAPS 5.2</strong><a href="./index.html">Volver a VICE HUB</a></header>
 <div class="layout">
 <aside><h2>Explora Leonida</h2><input id="search" type="search" placeholder="Buscar ubicación...">
-<select id="filter"><option value="all">Todas las categorías</option><option value="ciudad">Ciudades</option><option value="region">Regiones</option><option value="isla">Islas</option><option value="aeropuerto">Aeropuertos</option></select>
-<div id="count"></div><p id="status"></p><div id="items"></div>
+<select id="filter"><option value="all">Todas las categorías</option><option value="ciudad">Ciudades</option><option value="region">Regiones</option><option value="isla">Islas</option><option value="aeropuerto">Aeropuertos</option><option value="garaje">Garajes</option><option value="casa">Casas</option><option value="tienda">Tiendas</option><option value="vehiculo">Vehículos</option><option value="secreto">Secretos</option><option value="otro">Otros</option></select>
+<div id="count"></div><p id="status"></p>
+<div class="editor-panel" id="editorPanel">
+<button id="editorToggle" type="button">✏️ Activar editor local</button>
+<div id="editorForm" hidden>
+<p id="editHelp">Pulsa «Nuevo marcador» y toca el mapa. Amplía antes para mayor precisión.</p>
+<div class="row"><button id="newPin" type="button">＋ Nuevo marcador</button><button id="cancelPin" type="button">Cancelar</button></div>
+<label for="pinName">Nombre</label><input id="pinName" maxlength="100" placeholder="Ej. Garaje de Vice City">
+<label for="pinCategory">Categoría</label><select id="pinCategory"><option value="garaje">Garaje</option><option value="casa">Casa</option><option value="tienda">Tienda</option><option value="vehiculo">Vehículo</option><option value="secreto">Secreto</option><option value="ciudad">Ciudad</option><option value="region">Región</option><option value="isla">Isla</option><option value="aeropuerto">Aeropuerto</option><option value="otro">Otro</option></select>
+<label for="pinDescription">Descripción</label><textarea id="pinDescription" placeholder="Información del lugar"></textarea>
+<label for="pinCoords">Coordenadas sobre imagen (píxeles)</label><input id="pinCoords" readonly placeholder="Toca el mapa para elegir posición">
+<div class="row"><button id="savePin" type="button">Guardar ubicación</button><button id="deletePin" type="button">Eliminar</button></div>
+<div class="row"><button id="exportPins" type="button">Exportar JSON</button><button id="importPins" type="button">Importar JSON</button><input id="importFile" type="file" accept="application/json,.json" hidden></div>
+<p id="editStatus" role="status"></p>
+<p style="font-size:11px;color:#bdc9d9">Editor local de prueba: las modificaciones solo se guardan en este navegador. No es un panel administrativo seguro ni publica cambios en Supabase.</p>
+</div></div>
+<div id="items"></div>
 <p style="color:#aebdd2;font-size:12px">Ubicaciones iniciales aproximadas. El progreso se guarda en este dispositivo.</p></aside>
 <main id="stage" aria-label="Mapa interactivo de Leonida">
 <div id="world"><img id="poster" src="./assets/Leonida_Map_Poster.jpg" alt="Mapa de Leonida" draggable="false"></div>
@@ -39,7 +67,7 @@ input,select{width:100%;margin-bottom:9px}button{cursor:pointer}
 <script>
 (()=>{
 'use strict';
-const locations=[
+const defaults=[
 ['vice-city','Vice City','ciudad',714,750],['vice-beach','Vice Beach','ciudad',944,709],
 ['port-gellhorn','Port Gellhorn','ciudad',318,532],['hamlet','Hamlet','ciudad',592,1027],
 ['bonanza','Bonanza','ciudad',506,210],['grayson','Grayson','ciudad',410,330],
@@ -50,77 +78,56 @@ const locations=[
 ['mariana','Mariana County','region',452,1094],['draper','Draper Island','isla',260,449],
 ['hyde','Hyde Island','isla',630,167],['vc-airport','VCIA','aeropuerto',605,855],
 ['mile-zero','Mile Zero Air Station','aeropuerto',290,1297]
-].map(([id,name,type,x,y])=>({id,name,type,x,y}));
+].map(([id,name,type,x,y])=>({id,name,type,x,y,description:''}));
 const $=id=>document.getElementById(id),stage=$('stage'),world=$('world'),poster=$('poster'),detail=$('detail');
-const icons={ciudad:'🏙️',region:'🗺️',isla:'🏝️',aeropuerto:'✈️'};
-const key='vicehub-maps-4-discovered';
-let discovered;try{discovered=new Set(JSON.parse(localStorage.getItem(key)||'[]'))}catch{discovered=new Set()}
-let iw=1122,ih=1536,base=1,zoom=1,tx=0,ty=0,active=null;
+const icons={ciudad:'🏙️',region:'🗺️',isla:'🏝️',aeropuerto:'✈️',garaje:'🚗',casa:'🏠',tienda:'🛒',vehiculo:'🚘',secreto:'💎',otro:'📍'};
+const progressKey='vicehub-maps-4-discovered',pinKey='vicehub-maps-52-local-pins';
+let discovered;try{discovered=new Set(JSON.parse(localStorage.getItem(progressKey)||'[]'))}catch{discovered=new Set()}
+let custom=[];try{const saved=JSON.parse(localStorage.getItem(pinKey)||'[]');if(Array.isArray(saved))custom=saved.filter(validPin)}catch{}
+let iw=2805,ih=3840,base=1,zoom=1,tx=0,ty=0,editor=false,adding=false,selected=null,dragMarker=null;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function validPin(p){return p&&typeof p.id==='string'&&typeof p.name==='string'&&typeof p.type==='string'&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.x<=2805&&p.y>=0&&p.y<=3840}
+function all(){return [...defaults.map(p=>({...p,x:p.x/1122*iw,y:p.y/1536*ih})),...custom]}
 function render(){world.style.transform=`translate(${tx}px,${ty}px) scale(${base*zoom})`}
-function fit(){
- const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;
- base=Math.min(w/iw,h/ih);zoom=1;tx=(w-iw*base)/2;ty=(h-ih*base)/2;render();
-}
-function zoomAt(f,cx,cy){
- const old=base*zoom,nz=clamp(zoom*f,1,8),ns=base*nz;
- const wx=(cx-tx)/old,wy=(cy-ty)/old;
- tx=cx-wx*ns;ty=cy-wy*ns;zoom=nz;render();
-}
-function save(){try{localStorage.setItem(key,JSON.stringify([...discovered]))}catch{}}
-function openDetail(p){
- active=p;detail.hidden=false;detail.style.display='block';
- detail.replaceChildren();
- const title=document.createElement('strong');title.textContent=p.name;
- const text=document.createElement('p');text.textContent=`${p.type} · Posición inicial aproximada`;
- const btn=document.createElement('button');btn.textContent=discovered.has(p.id)?'✓ Visitado · Desmarcar':'Marcar como visitado';
- btn.onclick=()=>{discovered.has(p.id)?discovered.delete(p.id):discovered.add(p.id);save();draw();openDetail(p)};
- const close=document.createElement('button');close.textContent='Cerrar';close.style.marginLeft='8px';close.onclick=()=>{detail.hidden=true;detail.style.display='none'};
- detail.append(title,text,btn,close);
-}
-function draw(){
- world.querySelectorAll('.marker').forEach(n=>n.remove());
- const q=$('search').value.toLocaleLowerCase('es').trim(),f=$('filter').value;
- const shown=locations.filter(p=>(f==='all'||p.type===f)&&p.name.toLocaleLowerCase('es').includes(q));
- const list=$('items');list.replaceChildren();
- for(const p of shown){
-  const m=document.createElement('button');m.className='marker'+(discovered.has(p.id)?' done':'');
-  m.style.left=(p.x/1122*100)+'%';m.style.top=(p.y/1536*100)+'%';
-  m.textContent=icons[p.type];m.title=p.name;m.setAttribute('aria-label',p.name);
-  m.onclick=e=>{e.stopPropagation();openDetail(p)};world.append(m);
-  const b=document.createElement('button');b.className='item';b.textContent=p.name;
-  const small=document.createElement('small');small.textContent=`${icons[p.type]} ${p.type}${discovered.has(p.id)?' · ✓ Visitado':''}`;b.append(small);
-  b.onclick=()=>{const s=base*zoom;zoom=Math.max(zoom,1.7);const scale=base*zoom;tx=stage.clientWidth/2-p.x/1122*iw*scale;ty=stage.clientHeight/2-p.y/1536*ih*scale;render();openDetail(p)};
-  list.append(b);
- }
- $('count').textContent=`${shown.length} lugares · ${discovered.size} visitados`;
-}
-poster.onload=()=>{
- iw=poster.naturalWidth;ih=poster.naturalHeight;
- world.style.width=iw+'px';world.style.height=ih+'px';
- $('status').textContent=`Imagen cargada: ${iw} × ${ih} píxeles`;
- fit();draw();
-};
+function fit(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;base=Math.min(w/iw,h/ih);zoom=1;tx=(w-iw*base)/2;ty=(h-ih*base)/2;render()}
+function zoomAt(f,cx,cy){const old=base*zoom,nz=clamp(zoom*f,1,20),ns=base*nz,wx=(cx-tx)/old,wy=(cy-ty)/old;tx=cx-wx*ns;ty=cy-wy*ns;zoom=nz;render()}
+function toWorld(clientX,clientY){const r=stage.getBoundingClientRect(),s=base*zoom;return {x:clamp(Math.round((clientX-r.left-tx)/s),0,iw),y:clamp(Math.round((clientY-r.top-ty)/s),0,ih)}}
+function saveProgress(){try{localStorage.setItem(progressKey,JSON.stringify([...discovered]))}catch{}}
+function savePins(){try{localStorage.setItem(pinKey,JSON.stringify(custom));$('editStatus').textContent='Guardado en este navegador'}catch{$('editStatus').textContent='No se pudo guardar en este navegador'}}
+function openDetail(p){selected=p;detail.hidden=false;detail.style.display='block';detail.replaceChildren();
+const title=document.createElement('strong');title.textContent=p.name;const text=document.createElement('p');text.textContent=p.description||`${p.type} · Posición aproximada`;
+const btn=document.createElement('button');btn.textContent=discovered.has(p.id)?'✓ Visitado · Desmarcar':'Marcar como visitado';btn.onclick=()=>{discovered.has(p.id)?discovered.delete(p.id):discovered.add(p.id);saveProgress();draw();openDetail(p)};
+const close=document.createElement('button');close.textContent='Cerrar';close.style.marginLeft='8px';close.onclick=()=>{detail.hidden=true;detail.style.display='none'};
+detail.append(title,text,btn,close);if(editor){const edit=document.createElement('button');edit.textContent='Editar ubicación';edit.onclick=()=>editPin(p);detail.append(edit)}}
+function editPin(p){if(!editor)return;selected=p;adding=false;stage.classList.remove('adding');$('pinName').value=p.name;$('pinCategory').value=p.type;$('pinDescription').value=p.description||'';$('pinCoords').value=`${Math.round(p.x)}, ${Math.round(p.y)}`;$('deletePin').disabled=!custom.some(c=>c.id===p.id);$('editStatus').textContent=custom.some(c=>c.id===p.id)?'Arrastra el marcador para recolocarlo':'Marcador inicial: al guardar se creará una copia editable';draw()}
+function draw(){world.querySelectorAll('.marker').forEach(n=>n.remove());const q=$('search').value.toLocaleLowerCase('es').trim(),f=$('filter').value;const shown=all().filter(p=>(f==='all'||p.type===f)&&p.name.toLocaleLowerCase('es').includes(q));const list=$('items');list.replaceChildren();
+for(const p of shown){const m=document.createElement('button');m.className='marker'+(discovered.has(p.id)?' done':'')+(editor?' editing':'');m.style.left=(p.x/iw*100)+'%';m.style.top=(p.y/ih*100)+'%';m.textContent=icons[p.type]||'📍';m.title=p.name;m.setAttribute('aria-label',p.name);
+m.addEventListener('pointerdown',e=>{if(!editor||!custom.some(c=>c.id===p.id))return;e.stopPropagation();e.preventDefault();m.setPointerCapture(e.pointerId);dragMarker={id:p.id,startX:e.clientX,startY:e.clientY,moved:false};m.classList.add('dragging-marker')});
+m.addEventListener('pointermove',e=>{if(!dragMarker||dragMarker.id!==p.id)return;const pos=toWorld(e.clientX,e.clientY);if(Math.hypot(e.clientX-dragMarker.startX,e.clientY-dragMarker.startY)>3)dragMarker.moved=true;if(dragMarker.moved){m.style.left=(pos.x/iw*100)+'%';m.style.top=(pos.y/ih*100)+'%';$('pinCoords').value=`${pos.x}, ${pos.y}`}});
+m.addEventListener('pointerup',e=>{if(!dragMarker||dragMarker.id!==p.id)return;const moved=dragMarker.moved;dragMarker=null;m.classList.remove('dragging-marker');if(moved){const pos=toWorld(e.clientX,e.clientY),item=custom.find(c=>c.id===p.id);if(item){item.x=pos.x;item.y=pos.y;savePins();editPin(item);draw()}}else{editPin(p);openDetail(p)}});
+m.onclick=e=>{e.stopPropagation();if(!editor)openDetail(p);else if(!custom.some(c=>c.id===p.id)){editPin(p);openDetail(p)}};world.append(m);
+const b=document.createElement('button');b.className='item';b.textContent=p.name;const small=document.createElement('small');small.textContent=`${icons[p.type]||'📍'} ${p.type}${discovered.has(p.id)?' · ✓ Visitado':''}`;b.append(small);b.onclick=()=>{zoom=Math.max(zoom,1.7);const scale=base*zoom;tx=stage.clientWidth/2-p.x*scale;ty=stage.clientHeight/2-p.y*scale;render();openDetail(p)};list.append(b)}
+$('count').textContent=`${shown.length} lugares · ${discovered.size} visitados · ${custom.length} personalizados`}
+poster.onload=()=>{iw=poster.naturalWidth;ih=poster.naturalHeight;world.style.width=iw+'px';world.style.height=ih+'px';$('status').textContent=`Imagen cargada: ${iw} × ${ih} píxeles`;fit();draw()};
 poster.onerror=()=>{$('status').textContent='No se ha podido cargar assets/Leonida_Map_Poster.jpg'};
 if(poster.complete&&poster.naturalWidth)poster.onload();
 $('search').oninput=draw;$('filter').onchange=draw;
 $('plus').onclick=()=>zoomAt(1.5,stage.clientWidth/2,stage.clientHeight/2);
-$('minus').onclick=()=>zoomAt(1/1.5,stage.clientWidth/2,stage.clientHeight/2);
-$('fit').onclick=fit;
+$('minus').onclick=()=>zoomAt(1/1.5,stage.clientWidth/2,stage.clientHeight/2);$('fit').onclick=fit;
+$('editorToggle').onclick=()=>{editor=!editor;adding=false;stage.classList.remove('adding');$('editorForm').hidden=!editor;$('editorToggle').textContent=editor?'🔒 Cerrar editor local':'✏️ Activar editor local';detail.hidden=true;detail.style.display='none';draw()};
+$('newPin').onclick=()=>{adding=true;selected=null;stage.classList.add('adding');$('pinName').value='';$('pinDescription').value='';$('pinCoords').value='';$('deletePin').disabled=true;$('editStatus').textContent='Toca el lugar exacto del mapa para colocar el marcador'};
+$('cancelPin').onclick=()=>{adding=false;selected=null;stage.classList.remove('adding');$('editStatus').textContent='Edición cancelada'};
+$('savePin').onclick=()=>{const name=$('pinName').value.trim(),type=$('pinCategory').value,desc=$('pinDescription').value.trim(),coords=$('pinCoords').value.match(/^(\d+),\s*(\d+)$/);if(!name||!coords){$('editStatus').textContent='Escribe el nombre y selecciona una posición en el mapa';return}const x=Number(coords[1]),y=Number(coords[2]);if(x>iw||y>ih){$('editStatus').textContent='Coordenadas fuera del mapa';return}
+let item=custom.find(c=>c.id===selected?.id);if(!item){item={id:'local-'+(globalThis.crypto?.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2)),name,type,x,y,description:desc};custom.push(item)}else Object.assign(item,{name,type,x,y,description:desc});savePins();selected=item;adding=false;stage.classList.remove('adding');draw();openDetail(item)};
+$('deletePin').onclick=()=>{const i=custom.findIndex(c=>c.id===selected?.id);if(i<0)return;if(!confirm('¿Eliminar esta ubicación personalizada?'))return;custom.splice(i,1);savePins();selected=null;$('pinCoords').value='';$('pinName').value='';detail.hidden=true;detail.style.display='none';draw()};
+$('exportPins').onclick=()=>{const blob=new Blob([JSON.stringify({version:1,image:{width:iw,height:ih},locations:custom},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='vicehub-ubicaciones.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+$('importPins').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());if(data.image?.width!==iw||data.image?.height!==ih||!Array.isArray(data.locations)||data.locations.length>10000||!data.locations.every(p=>validPin(p)&&p.name.length<=100)){throw Error('Archivo incompatible o datos inválidos')}if(!confirm('¿Reemplazar tus ubicaciones personalizadas por las del archivo?'))return;custom=data.locations.map(p=>({id:p.id,name:p.name,type:p.type,x:p.x,y:p.y,description:String(p.description||'')}));savePins();draw()}catch(err){$('editStatus').textContent='No se pudo importar: '+err.message}e.target.value=''};
 stage.addEventListener('wheel',e=>{e.preventDefault();const r=stage.getBoundingClientRect();zoomAt(e.deltaY<0?1.18:1/1.18,e.clientX-r.left,e.clientY-r.top)},{passive:false});
 const pointers=new Map();let drag=null,pinch=null;
-stage.addEventListener('pointerdown',e=>{
- if(e.target.closest('button'))return;
- stage.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
- if(pointers.size===1){drag={x:e.clientX,y:e.clientY,tx,ty};stage.classList.add('dragging')}
- if(pointers.size===2){const a=[...pointers.values()];pinch={distance:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)};drag=null}
-});
-stage.addEventListener('pointermove',e=>{
- if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
- if(pointers.size===2){const a=[...pointers.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch?.distance){const r=stage.getBoundingClientRect();zoomAt(d/pinch.distance,(a[0].x+a[1].x)/2-r.left,(a[0].y+a[1].y)/2-r.top)}pinch={distance:d}}
- else if(drag){tx=drag.tx+e.clientX-drag.x;ty=drag.ty+e.clientY-drag.y;render()}
-});
-function end(e){pointers.delete(e.pointerId);if(pointers.size===0){drag=null;pinch=null;stage.classList.remove('dragging')}else if(pointers.size===1){const p=[...pointers.values()][0];drag={x:p.x,y:p.y,tx,ty};pinch=null}}
+stage.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;stage.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1){drag={x:e.clientX,y:e.clientY,tx,ty,moved:false};stage.classList.add('dragging')}if(pointers.size===2){const a=[...pointers.values()];pinch={distance:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)};drag=null}});
+stage.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===2){const a=[...pointers.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch?.distance){const r=stage.getBoundingClientRect();zoomAt(d/pinch.distance,(a[0].x+a[1].x)/2-r.left,(a[0].y+a[1].y)/2-r.top)}pinch={distance:d}}else if(drag){if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>5)drag.moved=true;tx=drag.tx+e.clientX-drag.x;ty=drag.ty+e.clientY-drag.y;render()}});
+function end(e){const wasTap=pointers.size===1&&drag&&!drag.moved;const pos=wasTap?toWorld(e.clientX,e.clientY):null;pointers.delete(e.pointerId);if(pointers.size===0){drag=null;pinch=null;stage.classList.remove('dragging')}else if(pointers.size===1){const p=[...pointers.values()][0];drag={x:p.x,y:p.y,tx,ty,moved:false};pinch=null}
+if(wasTap&&adding&&editor&&pos){$('pinCoords').value=`${pos.x}, ${pos.y}`;selected=null;adding=false;stage.classList.remove('adding');$('editStatus').textContent='Posición seleccionada. Escribe el nombre y pulsa Guardar ubicación';const rect=stage.getBoundingClientRect();const preview=document.createElement('span');preview.textContent='📍';preview.style.cssText=`position:absolute;left:${e.clientX-rect.left}px;top:${e.clientY-rect.top}px;z-index:6;pointer-events:none;font-size:30px;transform:translate(-50%,-100%)`;stage.append(preview);setTimeout(()=>preview.remove(),1200)}}
 stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',end);
 window.addEventListener('resize',fit);
 })();
