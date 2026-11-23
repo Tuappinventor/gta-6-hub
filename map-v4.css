@@ -1,0 +1,6 @@
+/* Mapa integrado: mantiene los marcadores reales de backend.js */
+#mapa #mapCanvas {position:relative; width:min(100%,750px); aspect-ratio:1122/1536; min-height:0; margin:18px auto; overflow:hidden; background:#102b3c url('./assets/leonida-map.svg') center / 100% 100% no-repeat; border:2px solid #405f6a; box-shadow:0 14px 32px #0008; touch-action:pan-y;}
+#mapa #mapCanvas::before {content:'MAPA ILUSTRATIVO · NO OFICIAL'; position:absolute; left:10px; top:10px; z-index:1; padding:7px 10px; border-radius:8px; background:#091923df; color:white; font-size:11px; pointer-events:none;}
+#mapa #mapCanvas .pin {transform:translate(-50%,-50%); z-index:2; min-width:28px; min-height:28px; box-shadow:0 2px 8px #0009;}
+#mapa #mapCanvas .pin:focus-visible {outline:3px solid white;outline-offset:3px;}
+@media(max-width:650px){#mapa #mapCanvas{width:100%;border-radius:12px}#mapa #mapCanvas .pin{padding:6px}}

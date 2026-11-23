@@ -1,13 +1,10 @@
-VICE HUB 3.3 - Panel editorial
+VICE HUB — INTEGRACIÓN SEGURA DEL MAPA
 
-1. Subir editorial-v33.js y editorial-v33.css a la raiz del repositorio.
-2. En index.html, dentro del <head>, añadir:
-   <link rel="stylesheet" href="./editorial-v33.css">
-3. Al final de index.html, justo despues de portal-v31.js, añadir:
-   <script src="./editorial-v33.js"></script>
-4. Commit y esperar despliegue Vercel.
-5. Iniciar sesion en VICE HUB con usuario cuyo profiles.role sea editor o admin.
-6. Abrir Editorial y pulsar Actualizar borradores.
-7. IMPORTANTE: comprobar que RLS de public.articles permite SELECT/UPDATE solo a editor/admin. Si falla UPDATE, revisar politicas en Supabase; no desactivar RLS.
-8. El boton Descartar usa status='rejected'; si existe CHECK sobre status, hay que permitir rejected. Alternativamente cambiar rejected por review en el JS hasta revisar esquema.
-9. El panel no modifica la automatizacion AutoNews 3.2 ni elimina noticias existentes.
+1. En GitHub sube map-v4.css a la raíz y leonida-map.svg a assets/.
+2. Abre index.html y busca la línea: <link rel="stylesheet" href="./media-v34.css">
+3. Justo debajo añade: <link rel="stylesheet" href="./map-v4.css">
+4. Haz Commit changes. Vercel desplegará el cambio.
+5. Abre tu web, entra en Mapa y recarga la página (si es necesario, borra la caché).
+
+NO reemplaces index.html ni backend.js. Se conservan los marcadores y progreso de Supabase.
+AVISO: el fondo es una ilustración, NO el mapa real de GTA VI. Las coordenadas de los marcadores actuales pueden no corresponder con la ilustración. El zoom avanzado y la cartografía verificada quedan pendientes.
