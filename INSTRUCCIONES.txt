@@ -1,15 +1,22 @@
-VICE HUB 3.0 — INSTALACION
-1. Ejecutar upgrade.sql una vez en Supabase > SQL Editor.
-2. Subir portal-v3.css, portal-v3.js, robots.txt y sitemap.xml a la raíz de GitHub.
-3. En index.html, dentro de <head> añadir:
-<link rel="stylesheet" href="./portal-v3.css">
-<meta name="description" content="Noticias y guías de GTA VI, con fuentes y seguimiento de rumores y anuncios oficiales.">
-<link rel="canonical" href="https://gta-6-hub-eta.vercel.app/">
-<meta property="og:title" content="VICE HUB | Noticias GTA VI">
-<meta property="og:description" content="Noticias, tráilers, rumores y guías de GTA VI.">
-4. Justo antes de </body> añadir:
-<script src="./portal-v3.js"></script>
-5. Reemplazar scripts/publish-news.mjs por el del ZIP, conservando los secretos en GitHub.
-6. Revisar el despliegue en Vercel y la ejecución manual de GitHub Actions.
-IMPORTANTE: Google no indexa necesariamente artículos individuales generados por JS. Para SEO completo de cada noticia hará falta prerenderizado/SSR y sitemap dinámico. El sitemap de esta versión incluye la portada.
-IMAGENES: no se descargan automáticamente imágenes de terceros. Se muestran imágenes HTTPS únicamente si hay una URL con derechos de uso revisados en image_url.
+VICE HUB 3.1 - INSTALACIÓN SIN BORRAR DATOS
+
+1. Ejecuta upgrade-v31.sql en Supabase SQL Editor. Es una migración aditiva.
+2. Sube api/article.js, api/sitemap.js, vercel.json y portal-v31.js al repositorio,
+   respetando las carpetas. No sustituyas scripts/publish-news.mjs ni otros archivos.
+3. En index.html, justo DESPUÉS de <script src="./portal-v3.js"></script>,
+   añade <script src="./portal-v31.js"></script>.
+4. En Vercel, Project Settings > Environment Variables, configura:
+   SUPABASE_URL = la URL pública de tu proyecto Supabase (igual que config.js)
+   SUPABASE_ANON_KEY = la clave PUBLICABLE/anon de config.js
+   No pongas SUPABASE_SERVICE_ROLE_KEY en la web ni en estos archivos.
+   Vuelve a desplegar en Vercel tras guardar las variables.
+5. Comprueba /articulo/slug-de-una-noticia y /sitemap.xml.
+6. Mantén robots.txt con la URL del sitemap existente.
+
+IMPORTANTE: este paquete implementa páginas HTML indexables y enlazado, pero NO
+activa una nueva redacción automática ni descarga imágenes de terceros.
+El pipeline actual de AutoNews se mantiene. La revisión de fuentes/imágenes
+necesita un cambio adicional del pipeline y permisos de uso de las imágenes.
+
+Si el proyecto de Vercel usa otro framework o una configuración de build especial,
+revisa los rewrites antes de subirlos.
