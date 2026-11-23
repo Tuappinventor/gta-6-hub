@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VICE HUB | Leonida Maps 5.2</title>
+<title>VICE HUB | Leonida Maps 5.3</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#090d19;color:#f5f6fc;font:15px system-ui,Arial}
 header{padding:13px 16px;background:#141b2b;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -14,7 +14,7 @@ input,select{width:100%;margin-bottom:9px}button{cursor:pointer}
 #stage.dragging{cursor:grabbing}
 #world{position:absolute;top:0;left:0;width:2805px;height:3840px;transform-origin:0 0;will-change:transform}
 #poster{display:block;width:100%;height:100%;pointer-events:none}
-.marker{position:absolute;transform:translate(-50%,-100%);border:2px solid white;background:#ec3e93;border-radius:50%;width:34px;height:34px;padding:0;display:grid;place-items:center;box-shadow:0 2px 10px #000a;z-index:2;touch-action:none}
+.marker{position:absolute;transform:translate(-50%,-100%) scale(var(--marker-scale,1));transform-origin:50% 100%;border:2px solid white;background:#ec3e93;border-radius:50%;width:34px;height:34px;padding:0;display:grid;place-items:center;box-shadow:0 2px 10px #000a;z-index:2;touch-action:none}
 .marker.done{background:#119c79}
 #controls{position:absolute;top:12px;right:12px;z-index:5;display:flex;flex-direction:column;gap:7px}
 #controls button{width:44px;height:44px;background:#10192de8}
@@ -38,7 +38,7 @@ input,select{width:100%;margin-bottom:9px}button{cursor:pointer}
 #editHelp{font-size:12px;color:#ffdb9c}
 @media(max-width:700px){.layout{display:flex;flex-direction:column;height:calc(100dvh - 53px)}#stage{flex:1;min-height:55vh}aside{order:2;max-height:32vh;padding:10px}#items{grid-template-columns:repeat(2,minmax(0,1fr))}header{font-size:14px}}
 </style></head><body>
-<header><strong>VICE <b>HUB</b> · LEONIDA MAPS 5.2</strong><a href="./index.html">Volver a VICE HUB</a></header>
+<header><strong>VICE <b>HUB</b> · LEONIDA MAPS 5.3</strong><a href="./index.html">Volver a VICE HUB</a></header>
 <div class="layout">
 <aside><h2>Explora Leonida</h2><input id="search" type="search" placeholder="Buscar ubicación...">
 <select id="filter"><option value="all">Todas las categorías</option><option value="ciudad">Ciudades</option><option value="region">Regiones</option><option value="isla">Islas</option><option value="aeropuerto">Aeropuertos</option><option value="garaje">Garajes</option><option value="casa">Casas</option><option value="tienda">Tiendas</option><option value="vehiculo">Vehículos</option><option value="secreto">Secretos</option><option value="otro">Otros</option></select>
@@ -88,7 +88,14 @@ let iw=2805,ih=3840,base=1,zoom=1,tx=0,ty=0,editor=false,adding=false,selected=n
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function validPin(p){return p&&typeof p.id==='string'&&typeof p.name==='string'&&typeof p.type==='string'&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.x<=2805&&p.y>=0&&p.y<=3840}
 function all(){return [...defaults.map(p=>({...p,x:p.x/1122*iw,y:p.y/1536*ih})),...custom]}
-function render(){world.style.transform=`translate(${tx}px,${ty}px) scale(${base*zoom})`}
+function render(){
+ const s=base*zoom;
+ // Marcadores de 28 px al inicio y gradualmente menores en zoom alto.
+ // El escalado inverso compensa el zoom del contenedor sin alterar su anclaje.
+ const screenSize=28*Math.pow(zoom,-0.14);
+ world.style.setProperty('--marker-scale',String(screenSize/(34*s)));
+ world.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;
+}
 function fit(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;base=Math.min(w/iw,h/ih);zoom=1;tx=(w-iw*base)/2;ty=(h-ih*base)/2;render()}
 function zoomAt(f,cx,cy){const old=base*zoom,nz=clamp(zoom*f,1,20),ns=base*nz,wx=(cx-tx)/old,wy=(cy-ty)/old;tx=cx-wx*ns;ty=cy-wy*ns;zoom=nz;render()}
 function toWorld(clientX,clientY){const r=stage.getBoundingClientRect(),s=base*zoom;return {x:clamp(Math.round((clientX-r.left-tx)/s),0,iw),y:clamp(Math.round((clientY-r.top-ty)/s),0,ih)}}
