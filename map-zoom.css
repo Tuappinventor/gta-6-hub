@@ -1,0 +1,7 @@
+/* Additional map zoom controls; preserves existing #mapCanvas and Supabase pins */
+#mapa .map-zoom-controls {display:flex;justify-content:center;gap:10px;margin:12px auto;flex-wrap:wrap}
+#mapa .map-zoom-controls button {min-width:44px;min-height:44px;font-weight:700}
+#mapa #mapCanvas {touch-action:none;overflow:hidden;cursor:grab}
+#mapa #mapCanvas:active {cursor:grabbing}
+#mapa #mapCanvas .map-zoom-layer {position:absolute;inset:0;transform-origin:0 0;will-change:transform;pointer-events:none;background:inherit}
+#mapa #mapCanvas .map-zoom-layer .pin {pointer-events:auto}

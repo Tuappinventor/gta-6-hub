@@ -1,10 +1,11 @@
-VICE HUB — INTEGRACIÓN SEGURA DEL MAPA
+VICE HUB Maps - zoom y desplazamiento
 
-1. En GitHub sube map-v4.css a la raíz y leonida-map.svg a assets/.
-2. Abre index.html y busca la línea: <link rel="stylesheet" href="./media-v34.css">
-3. Justo debajo añade: <link rel="stylesheet" href="./map-v4.css">
-4. Haz Commit changes. Vercel desplegará el cambio.
-5. Abre tu web, entra en Mapa y recarga la página (si es necesario, borra la caché).
+1. Sube map-zoom.js y map-zoom.css a la raiz de gta-6-hub.
+2. En index.html, dentro de <head>, agrega:
+   <link rel="stylesheet" href="./map-zoom.css">
+3. En index.html, justo antes de </body>, agrega:
+   <script src="./map-zoom.js"></script>
+4. Haz Commit changes y espera al despliegue de Vercel.
+5. Abre Mapa y prueba +, -, Centrar, arrastrar y marcar una ubicacion.
 
-NO reemplaces index.html ni backend.js. Se conservan los marcadores y progreso de Supabase.
-AVISO: el fondo es una ilustración, NO el mapa real de GTA VI. Las coordenadas de los marcadores actuales pueden no corresponder con la ilustración. El zoom avanzado y la cartografía verificada quedan pendientes.
+Nota: El mapa sigue siendo ilustrativo. El progreso sigue usando backend.js y Supabase.
