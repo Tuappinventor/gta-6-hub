@@ -1,0 +1,7 @@
+-- VICE HUB 3.3: estado para borradores descartados.
+-- Ejecutar desde Supabase SQL Editor; no elimina datos.
+-- Si existe una restricción CHECK que solo permita draft/review/published,
+-- adapte la restricción antes de usar 'rejected'.
+-- Seguridad: las políticas de escritura deben exigir rol editor/admin.
+-- NO conceder UPDATE indiscriminado a anon o authenticated.
+-- Revisar políticas existentes de public.articles en Supabase antes de publicar.

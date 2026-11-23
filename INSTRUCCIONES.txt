@@ -1,22 +1,13 @@
-VICE HUB 3.1 - INSTALACIÓN SIN BORRAR DATOS
+VICE HUB 3.3 - Panel editorial
 
-1. Ejecuta upgrade-v31.sql en Supabase SQL Editor. Es una migración aditiva.
-2. Sube api/article.js, api/sitemap.js, vercel.json y portal-v31.js al repositorio,
-   respetando las carpetas. No sustituyas scripts/publish-news.mjs ni otros archivos.
-3. En index.html, justo DESPUÉS de <script src="./portal-v3.js"></script>,
-   añade <script src="./portal-v31.js"></script>.
-4. En Vercel, Project Settings > Environment Variables, configura:
-   SUPABASE_URL = la URL pública de tu proyecto Supabase (igual que config.js)
-   SUPABASE_ANON_KEY = la clave PUBLICABLE/anon de config.js
-   No pongas SUPABASE_SERVICE_ROLE_KEY en la web ni en estos archivos.
-   Vuelve a desplegar en Vercel tras guardar las variables.
-5. Comprueba /articulo/slug-de-una-noticia y /sitemap.xml.
-6. Mantén robots.txt con la URL del sitemap existente.
-
-IMPORTANTE: este paquete implementa páginas HTML indexables y enlazado, pero NO
-activa una nueva redacción automática ni descarga imágenes de terceros.
-El pipeline actual de AutoNews se mantiene. La revisión de fuentes/imágenes
-necesita un cambio adicional del pipeline y permisos de uso de las imágenes.
-
-Si el proyecto de Vercel usa otro framework o una configuración de build especial,
-revisa los rewrites antes de subirlos.
+1. Subir editorial-v33.js y editorial-v33.css a la raiz del repositorio.
+2. En index.html, dentro del <head>, añadir:
+   <link rel="stylesheet" href="./editorial-v33.css">
+3. Al final de index.html, justo despues de portal-v31.js, añadir:
+   <script src="./editorial-v33.js"></script>
+4. Commit y esperar despliegue Vercel.
+5. Iniciar sesion en VICE HUB con usuario cuyo profiles.role sea editor o admin.
+6. Abrir Editorial y pulsar Actualizar borradores.
+7. IMPORTANTE: comprobar que RLS de public.articles permite SELECT/UPDATE solo a editor/admin. Si falla UPDATE, revisar politicas en Supabase; no desactivar RLS.
+8. El boton Descartar usa status='rejected'; si existe CHECK sobre status, hay que permitir rejected. Alternativamente cambiar rejected por review en el JS hasta revisar esquema.
+9. El panel no modifica la automatizacion AutoNews 3.2 ni elimina noticias existentes.

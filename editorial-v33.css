@@ -1,0 +1,7 @@
+.v33-panel{margin:20px 0 30px;padding:20px;border:1px solid #454061;border-radius:18px;background:#12192b}
+.v33-list{display:grid;gap:18px;margin-top:18px}
+.v33-card{display:grid;gap:10px}
+.v33-card input,.v33-card textarea{width:100%;max-width:100%;resize:vertical}
+.v33-card a{color:#ff89bd;overflow-wrap:anywhere}
+.v33-card .actions{display:flex;flex-wrap:wrap;gap:9px}
+.v33-card label{font-weight:650;font-size:13px;color:#cbd2e6}
