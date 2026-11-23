@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://gta-6-hub-eta.vercel.app/sitemap.xml
