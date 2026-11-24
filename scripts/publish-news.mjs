@@ -665,9 +665,13 @@ const tags = [
     source_name: original
       ? new URL(original.url).hostname
       : item.feed,
-    verification_level,
-    category,
-    featured: false,
+    
+verification_level,
+category,
+categories,
+tags,
+featured: false,
+
     verification_notes:
       `AutoNews 3.3 · ${
         String(
