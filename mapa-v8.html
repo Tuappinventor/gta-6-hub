@@ -3,188 +3,289 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
- content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Leonida Maps 8.1 | VICE HUB</title>
 
-<title>Leonida Maps 8.0 | VICE HUB</title>
-
-<link rel="stylesheet"
- href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 
 <style>
-* {
-  box-sizing: border-box;
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ background:#090d19;
+ color:#f5f6fc;
+ font:14px system-ui,sans-serif;
 }
 
-body {
-  margin: 0;
-  background: #090d19;
-  color: #f5f6fc;
-  font-family: system-ui, sans-serif;
+header{
+ height:56px;
+ padding:10px 14px;
+ background:#151827;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
 }
 
-header {
-  height: 58px;
-  padding: 10px 15px;
-  background: #141827;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+.brand{
+ color:#f472b6;
+ font-weight:800;
 }
 
-.brand {
-  font-weight: 800;
-  color: #f472b6;
+.brand small{
+ display:block;
+ color:#94a3b8;
+ font-size:11px;
 }
 
-header small {
-  display: block;
-  color: #94a3b8;
-  font-size: 11px;
+a{
+ color:#f9a8d4;
+ text-decoration:none;
 }
 
-header a {
-  color: #ddd6fe;
-  text-decoration: none;
-  font-size: 13px;
+#map{
+ position:absolute;
+ top:56px;
+ bottom:60px;
+ left:0;
+ right:0;
+ background:#0b1729;
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  height: calc(100dvh - 58px);
+nav{
+ position:absolute;
+ bottom:0;
+ left:0;
+ right:0;
+ height:60px;
+ background:#151827;
+ display:flex;
+ z-index:1001;
+ border-top:1px solid #334155;
 }
 
-aside {
-  padding: 16px;
-  background: #111827;
-  overflow-y: auto;
-  border-right: 1px solid #334155;
+nav button{
+ flex:1;
+ border:0;
+ background:transparent;
+ color:#e2e8f0;
+ font-size:11px;
+ padding:5px;
 }
 
-h2 {
-  font-size: 18px;
-  margin: 0 0 15px;
+nav button span{
+ display:block;
+ font-size:21px;
+ margin-bottom:2px;
 }
 
-input, button, select {
-  font: inherit;
-  color: white;
-  background: #1e293b;
-  border: 1px solid #475569;
-  border-radius: 8px;
-  padding: 10px;
+nav button.active{
+ color:#f472b6;
+ background:#252039;
 }
 
-button {
-  cursor: pointer;
+button,input,select{
+ font:inherit;
+ color:#f5f6fc;
+ background:#1e293b;
+ border:1px solid #475569;
+ border-radius:9px;
+ padding:10px;
 }
 
-input, select {
-  width: 100%;
-  margin-bottom: 10px;
+button{cursor:pointer}
+
+input,select{width:100%}
+
+#panel{
+ position:absolute;
+ left:12px;
+ bottom:72px;
+ width:340px;
+ max-height:70dvh;
+ overflow:auto;
+ background:#111827f5;
+ border:1px solid #475569;
+ border-radius:15px;
+ padding:14px;
+ z-index:1000;
+ box-shadow:0 8px 30px #0008;
 }
 
-button:hover {
-  background: #334155;
+#panel[hidden]{display:none}
+
+.panel-header{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ margin-bottom:12px;
 }
 
-.actions {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
+.panel-header h2{
+ font-size:16px;
+ margin:0;
+ color:#f9a8d4;
 }
 
-.actions button {
-  flex: 1;
-  font-size: 12px;
+.actions{
+ display:flex;
+ gap:6px;
+ margin:10px 0;
 }
 
-#map {
-  width: 100%;
-  height: 100%;
-  background: #0b1729;
+.actions button{
+ flex:1;
+ font-size:12px;
 }
 
-#categories {
-  display: grid;
-  gap: 6px;
+.category{
+ display:flex;
+ align-items:center;
+ gap:8px;
+ padding:9px;
+ margin:4px 0;
+ background:#1e293b;
+ border-radius:8px;
+ font-size:12px;
 }
 
-.category {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  padding: 9px;
-  background: #1e293b;
-  border-radius: 8px;
-  cursor: pointer;
+.category input{
+ width:auto;
+ accent-color:#ec4899;
 }
 
-.category input {
-  width: auto;
-  margin: 0;
-  accent-color: #ec4899;
+.category .count{
+ margin-left:auto;
+ color:#94a3b8;
 }
 
-.category .count {
-  margin-left: auto;
-  color: #94a3b8;
+details{
+ margin:10px 0;
 }
 
-#status {
-  font-size: 12px;
-  color: #94a3b8;
-  line-height: 1.5;
+summary{
+ padding:10px;
+ background:#253149;
+ border-radius:8px;
+ cursor:pointer;
+ font-weight:600;
+}
+
+#status{
+ position:absolute;
+ top:66px;
+ left:50%;
+ transform:translateX(-50%);
+ z-index:900;
+ background:#111827e8;
+ padding:7px 12px;
+ border-radius:20px;
+ font-size:11px;
+ max-width:65%;
+ text-align:center;
+ pointer-events:none;
+}
+
+.pin{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ width:30px;
+ height:30px;
+ border-radius:50%;
+ border:2px solid white;
+ box-shadow:0 2px 7px #0009;
+ font-size:16px;
+}
+
+.pin.found{
+ opacity:.5;
+ border-color:#34d399;
+}
+
+.cluster-v8{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ border-radius:50%;
+ background:#db2777e8;
+ color:white;
+ font-size:13px;
+ font-weight:800;
+ border:3px solid #f9a8d4;
+ box-shadow:0 0 0 5px #ec489944;
 }
 
 .leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
-  background: #172033;
-  color: white;
+.leaflet-popup-tip{
+ background:#172033;
+ color:white;
 }
 
-.leaflet-popup-content {
-  line-height: 1.5;
+.leaflet-popup-content{
+ line-height:1.5;
 }
 
-.leaflet-popup-content a {
-  color: #f9a8d4;
+.leaflet-popup-content button{
+ display:block;
+ width:100%;
+ margin-top:10px;
 }
 
-.leaflet-container .leaflet-control-attribution {
-  background: #111827e8;
-  color: #e2e8f0;
-  font-size: 10px;
+.leaflet-container .leaflet-control-attribution{
+ background:#111827e8;
+ color:#e2e8f0;
+ font-size:9px;
 }
 
-.leaflet-control-attribution a {
-  color: #f9a8d4;
+.leaflet-control-attribution a{
+ color:#f9a8d4;
 }
 
-@media(max-width: 700px) {
-  .layout {
-    display: flex;
-    flex-direction: column;
-  }
+.result{
+ display:block;
+ width:100%;
+ text-align:left;
+ margin-top:6px;
+ font-size:12px;
+}
 
-  #map {
-    flex: 1;
-    min-height: 0;
-  }
+.result small{
+ display:block;
+ color:#94a3b8;
+ margin-top:3px;
+}
 
-  aside {
-    order: 2;
-    max-height: 32dvh;
-    padding: 10px;
-    border-right: 0;
-  }
+.progress-track{
+ height:9px;
+ background:#334155;
+ border-radius:20px;
+ overflow:hidden;
+ margin:10px 0;
+}
 
-  #categories {
-    grid-template-columns: 1fr 1fr;
-  }
+.progress-fill{
+ height:100%;
+ background:#2dd4bf;
+}
+
+.muted{
+ color:#94a3b8;
+ font-size:12px;
+ line-height:1.5;
+}
+
+@media(max-width:700px){
+ #panel{
+  left:8px;
+  right:8px;
+  bottom:68px;
+  width:auto;
+  max-height:48dvh;
+ }
+ header a{font-size:12px}
 }
 </style>
 </head>
@@ -192,390 +293,845 @@ button:hover {
 <body>
 
 <header>
-  <div class="brand">
-    VICE HUB · MAPS 8.0
-    <small>Explora Leonida</small>
-  </div>
-
-  <a href="./index.html">Volver a VICE HUB</a>
+ <div class="brand">
+ VICE HUB · MAPS 8.1
+ <small>Explora Leonida</small>
+ </div>
+ <a href="./index.html">Volver a VICE HUB</a>
 </header>
 
-<div class="layout">
+<main id="map"></main>
 
-  <aside>
+<div id="status">Cargando Leonida...</div>
 
-    <h2>Explorar el mapa</h2>
+<section id="panel" hidden>
+ <div class="panel-header">
+  <h2 id="panelTitle"></h2>
+  <button id="closePanel">✕</button>
+ </div>
+ <div id="panelContent"></div>
+</section>
 
-    <input id="search"
-      type="search"
-      placeholder="Buscar ubicación...">
+<nav>
+ <button data-panel="search">
+  <span>🔎</span>Buscar
+ </button>
+ <button data-panel="layers">
+  <span>🗺️</span>Capas
+ </button>
+ <button data-panel="filters">
+  <span>🎛️</span>Filtros
+ </button>
+ <button data-panel="progress">
+  <span>📊</span>Progreso
+ </button>
+ <button id="fullButton">
+  <span>⛶</span>Pantalla
+ </button>
+</nav>
 
-    <select id="mapStyle">
-      <option value="night">🌙 Mapa nocturno</option>
-      <option value="day">☀️ Mapa diurno</option>
-    </select>
-
-    <div class="actions">
-      <button id="showAll">Mostrar todo</button>
-      <button id="hideAll">Ocultar todo</button>
-    </div>
-
-    <div class="actions">
-      <button id="resetMap">Centrar mapa</button>
-      <button id="fullscreen">Pantalla completa</button>
-    </div>
-
-    <p id="status">Cargando mapa...</p>
-
-    <div id="categories"></div>
-
-  </aside>
-
-  <main id="map"></main>
-
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script>
 'use strict';
 
 const BASE =
-  'https://fbritoferreira.github.io/gta6';
+ 'https://fbritoferreira.github.io/gta6';
 
 const $ = id =>
-  document.getElementById(id);
+ document.getElementById(id);
+
+const STORE = 'vicehub-maps-v81';
+
+function read(key,fallback){
+ try{
+  return JSON.parse(
+   localStorage.getItem(STORE+key)
+  ) ?? fallback;
+ }catch{
+  return fallback;
+ }
+}
+
+function save(key,value){
+ try{
+  localStorage.setItem(
+   STORE+key,JSON.stringify(value)
+  );
+ }catch{}
+}
+
+const translations = {
+ flamingo:'Flamencos de cocaína',
+ card:'Cartas coleccionables',
+ waink:'Escaneos WAiNK',
+ magazine:'Revistas, libros y cómics',
+ meditation:'Meditación',
+ underwater:'Descubrimientos submarinos',
+ kenton:'Conjuntos Kenton',
+ playlist:'Listas musicales únicas',
+ hoop:'Canchas de baloncesto',
+ bret:'Desafíos de tiro de Bret',
+ stunt:'Saltos acrobáticos',
+ race:'Carreras',
+ drone:'Contrarreloj con drones',
+ range:'Campos de tiro',
+ arcade:'Videojuegos, billar y minigolf',
+ gang:'Operaciones de bandas',
+ bank:'Bancos y cámaras acorazadas',
+ smash:'Robos rápidos',
+ store:'Tiendas para atracar',
+ fence:'Peristas y talleres Pay n Spray',
+ other:'Otros',
+ package:'Paquetes ocultos',
+ meteorite:'Meteoritos',
+ treasure:'Tesoros',
+ bottle:'Mensajes en botellas',
+ bookswap:'Intercambio de libros',
+ mural:'Murales 1010',
+ streetart:'Arte urbano Ahol',
+ vehicle:'Vehículos especiales',
+ bridge:'Vuelos bajo puentes',
+ knife:'Vuelos de cuchillo',
+ basejump:'Salto BASE y paracaidismo',
+ fishing:'Zonas de pesca',
+ hunting:'Caza',
+ event:'Eventos aleatorios',
+ safe:'Cajas fuertes',
+ towatm:'Cajeros remolcables',
+ payday:'Préstamos rápidos',
+ weapon:'Armas',
+ safehouse:'Casas seguras',
+ shop:'Tiendas y servicios',
+ food:'Restaurantes, bares y clubes',
+ hotel:'Hoteles',
+ transport:'Transporte',
+ civic:'Policía y hospitales',
+ leisure:'Ocio y deporte',
+ nature:'Lugares naturales',
+ building:'Edificios y monumentos'
+};
+
+const groupNames = {
+ Collectibles:'Coleccionables',
+ Activities:'Actividades',
+ Crime:'Delitos',
+ Places:'Lugares y servicios',
+ Other:'Otros'
+};
 
 const bounds = L.latLngBounds(
-  [-1024, 0],
-  [0, 1024]
+ [-1024,0],[0,1024]
 );
 
-const map = L.map('map', {
-  crs: L.CRS.Simple,
-  minZoom: -3,
-  maxZoom: 7,
-  preferCanvas: true,
-  maxBounds: bounds.pad(0.15),
-  maxBoundsViscosity: 0.8
+const map = L.map('map',{
+ crs:L.CRS.Simple,
+ minZoom:-3,
+ maxZoom:7,
+ maxBounds:bounds.pad(.15),
+ maxBoundsViscosity:.8
 });
 
 map.fitBounds(bounds);
 
 let tiles;
-let locations = [];
-let active = new Set();
+let style = read(':style','night');
 
-const groups = new Map();
-const categoryNames = new Map();
+if(!['night','day'].includes(style)){
+ style='night';
+}
 
-function setStyle(style) {
+let locations=[];
+let categories=new Map();
+let active=new Set();
+let found=new Set(read(':found',[]));
+let hideFound=!!read(':hideFound',false);
+let currentPanel='';
+let query='';
+let loaded=false;
 
-  if (tiles) map.removeLayer(tiles);
+const markerIndex=new Map();
 
-  tiles = L.tileLayer(
-    `${BASE}/tiles/${style}/{z}/{z},{y},{x}.webp`,
-    {
-      tileSize: 256,
-      minNativeZoom: 0,
-      maxNativeZoom: 5,
-      minZoom: -3,
-      maxZoom: 7,
-      bounds,
-      noWrap: true,
+function setStyle(value){
 
-      attribution:
-        '<a href="https://github.com/fbritoferreira/gta6" target="_blank" rel="noopener">Open GTA 6 Map</a> · ' +
-        '<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>'
-    }
-  ).addTo(map);
+ style=value;
+ save(':style',style);
 
-  tiles.on('tileerror', () => {
-    $('status').textContent =
-      'Alguna tesela no se ha podido cargar.';
+ if(tiles)map.removeLayer(tiles);
+
+ tiles=L.tileLayer(
+  `${BASE}/tiles/${style}/{z}/{z},{y},{x}.webp`,
+  {
+   tileSize:256,
+   minNativeZoom:0,
+   maxNativeZoom:5,
+   minZoom:-3,
+   maxZoom:7,
+   bounds,
+   noWrap:true,
+   attribution:
+    '<a href="https://github.com/fbritoferreira/gta6">Open GTA 6 Map</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · Interfaz adaptada por VICE HUB'
+  }
+ ).addTo(map);
+}
+
+setStyle(style);
+
+const cluster=L.markerClusterGroup({
+ maxClusterRadius:55,
+ disableClusteringAtZoom:6,
+ showCoverageOnHover:false,
+ spiderfyOnMaxZoom:true,
+ removeOutsideVisibleBounds:true,
+ animate:false,
+
+ iconCreateFunction(group){
+
+  const n=group.getChildCount();
+
+  const size=n>=100?46:
+             n>=20?40:32;
+
+  return L.divIcon({
+   html:`<div class="cluster-v8" style="width:${size}px;height:${size}px">${n}</div>`,
+   className:'',
+   iconSize:[size,size]
   });
+ }
+});
+
+map.addLayer(cluster);
+
+function normalize(value){
+ return String(value||'')
+ .normalize('NFD')
+ .replace(/[\u0300-\u036f]/g,'')
+ .toLowerCase();
 }
 
-setStyle('night');
-
-function normalize(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
+function category(p){
+ return categories.get(p.kind)||{
+  name:p.type||p.kind||'Otros',
+  colour:'#94a3b8',
+  icon:'📍',
+  group:'Other',
+  pinnable:false
+ };
 }
 
-function popup(location) {
-
-  const content =
-    document.createElement('div');
-
-  const title =
-    document.createElement('strong');
-
-  title.textContent =
-    location.name || location.type;
-
-  content.append(title);
-
-  const description =
-    document.createElement('p');
-
-  description.textContent = [
-    location.type,
-    location.district || location.area,
-    location.description
-  ].filter(Boolean).join(' · ');
-
-  content.append(description);
-
-  const source =
-    document.createElement('a');
-
-  source.href =
-    BASE + '/?id=' +
-    encodeURIComponent(location.id);
-
-  source.target = '_blank';
-  source.rel = 'noopener';
-
-  source.textContent =
-    'Consultar ubicación original';
-
-  content.append(source);
-
-  return content;
+function categoryLabel(p){
+ return translations[p.kind]||
+ category(p).name;
 }
 
-function renderCategories() {
+function matches(p){
 
-  const container = $('categories');
-  container.replaceChildren();
+ const text=normalize([
+  p.name,p.type,p.kind,
+  p.district,p.area,
+  p.description,categoryLabel(p)
+ ].join(' '));
 
-  const counts = new Map();
-
-  for (const p of locations) {
-    const key = p.kind || 'other';
-
-    counts.set(
-      key,
-      (counts.get(key) || 0) + 1
-    );
-  }
-
-  const entries = [...counts.entries()]
-    .sort((a, b) => b[1] - a[1]);
-
-  for (const [key, count] of entries) {
-
-    const label =
-      document.createElement('label');
-
-    label.className = 'category';
-
-    const checkbox =
-      document.createElement('input');
-
-    checkbox.type = 'checkbox';
-    checkbox.checked = active.has(key);
-
-    checkbox.onchange = () => {
-      if (checkbox.checked) {
-        active.add(key);
-      } else {
-        active.delete(key);
-      }
-
-      renderMarkers();
-    };
-
-    const name =
-      document.createElement('span');
-
-    name.textContent =
-      categoryNames.get(key) || key;
-
-    const total =
-      document.createElement('span');
-
-    total.className = 'count';
-    total.textContent = count;
-
-    label.append(checkbox, name, total);
-    container.append(label);
-  }
+ return normalize(query)
+ .split(/\s+/)
+ .every(word=>text.includes(word));
 }
 
-function renderMarkers() {
+function makeIcon(p){
 
-  for (const group of groups.values()) {
-    map.removeLayer(group);
-  }
+ const c=category(p);
+ const element=document.createElement('div');
 
-  groups.clear();
+ element.className=
+  'pin'+(found.has(p.id)?' found':'');
 
-  const query =
-    normalize($('search').value);
+ element.style.background=
+  /^#[0-9a-f]{6}$/i.test(c.colour)
+  ?c.colour:'#64748b';
 
-  let visible = 0;
+ element.textContent=
+  found.has(p.id)?'✓':c.icon||'📍';
 
-  for (const p of locations) {
-
-    const kind = p.kind || 'other';
-
-    if (!active.has(kind)) continue;
-
-    const text = normalize([
-      p.name,
-      p.type,
-      p.kind,
-      p.district,
-      p.area,
-      p.description
-    ].join(' '));
-
-    if (!text.includes(query)) continue;
-
-    if (!groups.has(kind)) {
-      groups.set(kind, L.layerGroup());
-    }
-
-    const marker = L.circleMarker(
-      [-p.y, p.x],
-      {
-        radius: 5,
-        color: '#ffffff',
-        weight: 1,
-        fillColor: '#ec4899',
-        fillOpacity: 0.9
-      }
-    );
-
-    marker.bindPopup(() => popup(p));
-
-    marker.addTo(groups.get(kind));
-
-    visible++;
-  }
-
-  for (const group of groups.values()) {
-    group.addTo(map);
-  }
-
-  $('status').textContent =
-    `${visible} de ${locations.length} ubicaciones seleccionadas. Datos comunitarios.`;
+ return L.divIcon({
+  html:element,
+  className:'',
+  iconSize:[30,30],
+  iconAnchor:[15,15],
+  popupAnchor:[0,-15]
+ });
 }
 
-async function loadData() {
+function popup(p){
 
-  try {
+ const content=document.createElement('div');
 
-    const response = await fetch(
-      BASE + '/data/locations.json'
-    );
+ const title=document.createElement('strong');
+ title.textContent=p.name||categoryLabel(p);
+ content.append(title);
 
-    if (!response.ok) {
-      throw Error('HTTP ' + response.status);
-    }
+ const info=document.createElement('p');
 
-    const data = await response.json();
+ info.textContent=[
+  categoryLabel(p),
+  p.district||p.area,
+  p.description
+ ].filter(Boolean).join(' · ');
 
-    if (!Array.isArray(data)) {
-      throw Error('Formato no compatible');
-    }
+ content.append(info);
 
-    locations = data.filter(p =>
-      p &&
-      Number.isFinite(p.x) &&
-      Number.isFinite(p.y) &&
-      p.x >= 0 && p.x <= 1024 &&
-      p.y >= 0 && p.y <= 1024
-    );
+ if(category(p).pinnable){
 
-    for (const p of locations) {
-      const kind = p.kind || 'other';
+  const button=document.createElement('button');
 
-      active.add(kind);
+  button.textContent=found.has(p.id)
+   ?'✓ Encontrado · Desmarcar'
+   :'Marcar como encontrado';
 
-      if (!categoryNames.has(kind)) {
-        categoryNames.set(
-          kind,
-          p.type || kind
-        );
-      }
-    }
+  button.onclick=()=>{
 
-    renderCategories();
+   if(found.has(p.id)){
+    found.delete(p.id);
+   }else{
+    found.add(p.id);
+   }
+
+   save(':found',[...found]);
+
+   const marker=markerIndex.get(p.id);
+
+   if(marker){
+    marker.setIcon(makeIcon(p));
+   }
+
+   if(hideFound){
+    map.closePopup();
     renderMarkers();
+   }else{
+    button.textContent=found.has(p.id)
+     ?'✓ Encontrado · Desmarcar'
+     :'Marcar como encontrado';
+   }
 
-  } catch (error) {
+   if(currentPanel==='progress'){
+    renderPanel('progress');
+   }
+  };
 
-    $('status').textContent =
-      'No se pudieron cargar las ubicaciones: ' +
-      error.message;
-  }
+  content.append(button);
+ }
+
+ const link=document.createElement('a');
+
+ link.href=BASE+'/?id='+encodeURIComponent(p.id);
+ link.target='_blank';
+ link.rel='noopener';
+ link.textContent='Consultar fuente original';
+
+ content.append(document.createElement('br'),link);
+
+ return content;
 }
 
-$('mapStyle').onchange = event => {
-  setStyle(event.target.value);
-};
+function renderMarkers(){
 
-$('search').oninput = renderMarkers;
+ if(!loaded)return;
 
-$('showAll').onclick = () => {
+ cluster.clearLayers();
+ markerIndex.clear();
 
-  active = new Set(
-    locations.map(p => p.kind || 'other')
+ const markers=[];
+
+ for(const p of locations){
+
+  if(!active.has(p.kind))continue;
+  if(hideFound&&found.has(p.id))continue;
+  if(!matches(p))continue;
+
+  const marker=L.marker(
+   [-p.y,p.x],
+   {
+    icon:makeIcon(p),
+    title:p.name||categoryLabel(p)
+   }
   );
 
-  renderCategories();
-  renderMarkers();
-};
+  marker.bindPopup(()=>popup(p));
 
-$('hideAll').onclick = () => {
+  markerIndex.set(p.id,marker);
+  markers.push(marker);
+ }
 
-  active.clear();
+ cluster.addLayers(markers);
 
-  renderCategories();
-  renderMarkers();
-};
+ $('status').textContent=
+  `${markers.length.toLocaleString('es-ES')} de ${locations.length.toLocaleString('es-ES')} ubicaciones`;
+}
 
-$('resetMap').onclick = () => {
-  map.fitBounds(bounds);
-};
+function openLocation(p){
 
-$('fullscreen').onclick = async () => {
+ active.add(p.kind);
+ save(':active',[...active]);
 
-  try {
+ query='';
 
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
-    } else {
-      await document.documentElement
-        .requestFullscreen();
-    }
+ if(found.has(p.id)&&hideFound){
+  hideFound=false;
+  save(':hideFound',false);
+ }
 
-  } catch {
+ closePanel();
+ renderMarkers();
 
-    $('status').textContent =
-      'Pantalla completa no disponible en este navegador.';
+ const marker=markerIndex.get(p.id);
+
+ if(marker){
+  cluster.zoomToShowLayer(marker,()=>{
+   marker.openPopup();
+  });
+ }
+}
+
+function makeButton(text,action){
+
+ const button=document.createElement('button');
+ button.textContent=text;
+ button.onclick=action;
+ return button;
+}
+
+function paragraph(text){
+
+ const p=document.createElement('p');
+ p.className='muted';
+ p.textContent=text;
+ return p;
+}
+
+function closePanel(){
+
+ currentPanel='';
+ $('panel').hidden=true;
+
+ document.querySelectorAll('[data-panel]')
+ .forEach(b=>b.classList.remove('active'));
+}
+
+function renderPanel(type){
+
+ currentPanel=type;
+
+ const content=$('panelContent');
+ content.replaceChildren();
+
+ $('panel').hidden=false;
+
+ const titles={
+  search:'Buscar ubicaciones',
+  layers:'Capas del mapa',
+  filters:'Filtrar ubicaciones',
+  progress:'Mi progreso'
+ };
+
+ $('panelTitle').textContent=titles[type];
+
+ document.querySelectorAll('[data-panel]')
+ .forEach(b=>{
+  b.classList.toggle(
+   'active',b.dataset.panel===type
+  );
+ });
+
+ if(type==='search'){
+
+  const input=document.createElement('input');
+  input.type='search';
+  input.placeholder='Nombre, categoría, distrito...';
+  input.value=query;
+
+  const results=document.createElement('div');
+
+  function update(){
+
+   query=input.value.trim();
+   renderMarkers();
+   results.replaceChildren();
+
+   if(!query){
+    results.append(paragraph(
+     'Escribe para buscar una ubicación.'
+    ));
+    return;
+   }
+
+   const hits=locations.filter(matches);
+
+   results.append(paragraph(
+    `${hits.length} resultados`
+   ));
+
+   for(const p of hits.slice(0,60)){
+
+    const b=makeButton(
+     `${category(p).icon||'📍'} ${p.name||categoryLabel(p)}`,
+     ()=>openLocation(p)
+    );
+
+    b.className='result';
+
+    const sub=document.createElement('small');
+
+    sub.textContent=[
+     categoryLabel(p),
+     p.district||p.area
+    ].filter(Boolean).join(' · ');
+
+    b.append(sub);
+    results.append(b);
+   }
   }
+
+  input.oninput=update;
+
+  content.append(
+   input,
+   makeButton('Limpiar búsqueda',()=>{
+    input.value='';
+    update();
+   }),
+   results
+  );
+
+  update();
+ }
+
+ if(type==='layers'){
+
+  content.append(
+   makeButton('☀️ Mapa diurno',()=>{
+    setStyle('day');
+   }),
+   makeButton('🌙 Mapa nocturno',()=>{
+    setStyle('night');
+   }),
+   paragraph('Vista general de Leonida'),
+   makeButton('Centrar mapa',()=>{
+    map.fitBounds(bounds);
+    closePanel();
+   })
+  );
+ }
+
+ if(type==='filters'){
+
+  const actions=document.createElement('div');
+  actions.className='actions';
+
+  actions.append(
+
+   makeButton('Mostrar todo',()=>{
+    active=new Set(
+     locations.map(p=>p.kind)
+    );
+    save(':active',[...active]);
+    renderMarkers();
+    renderPanel('filters');
+   }),
+
+   makeButton('Ocultar todo',()=>{
+    active.clear();
+    save(':active',[]);
+    renderMarkers();
+    renderPanel('filters');
+   })
+  );
+
+  content.append(actions);
+
+  const option=document.createElement('label');
+  option.className='category';
+
+  const check=document.createElement('input');
+  check.type='checkbox';
+  check.checked=hideFound;
+
+  check.onchange=()=>{
+   hideFound=check.checked;
+   save(':hideFound',hideFound);
+   renderMarkers();
+  };
+
+  option.append(check,'Ocultar encontrados');
+  content.append(option);
+
+  const counts=new Map();
+
+  for(const p of locations){
+   counts.set(
+    p.kind,(counts.get(p.kind)||0)+1
+   );
+  }
+
+  const grouped=new Map();
+
+  for(const [key,count] of counts){
+
+   const c=categories.get(key)||{
+    name:key,
+    icon:'📍',
+    group:'Other'
+   };
+
+   const group=c.group||'Other';
+
+   if(!grouped.has(group)){
+    grouped.set(group,[]);
+   }
+
+   grouped.get(group).push({
+    key,count,...c
+   });
+  }
+
+  for(const [group,entries] of grouped){
+
+   const details=document.createElement('details');
+
+   const summary=document.createElement('summary');
+
+   summary.textContent=
+    groupNames[group]||group;
+
+   details.append(summary);
+
+   for(const c of entries){
+
+    const label=document.createElement('label');
+    label.className='category';
+
+    const cb=document.createElement('input');
+    cb.type='checkbox';
+    cb.checked=active.has(c.key);
+
+    cb.onchange=()=>{
+
+     if(cb.checked){
+      active.add(c.key);
+     }else{
+      active.delete(c.key);
+     }
+
+     save(':active',[...active]);
+     renderMarkers();
+    };
+
+    const name=document.createElement('span');
+
+    name.textContent=
+     `${c.icon||'📍'} ${translations[c.key]||c.name}`;
+
+    const total=document.createElement('span');
+
+    total.className='count';
+    total.textContent=c.count;
+
+    label.append(cb,name,total);
+    details.append(label);
+   }
+
+   content.append(details);
+  }
+ }
+
+ if(type==='progress'){
+
+  const trackable=locations.filter(
+   p=>category(p).pinnable
+  );
+
+  const done=trackable.filter(
+   p=>found.has(p.id)
+  ).length;
+
+  const percent=trackable.length
+   ?Math.round(done/trackable.length*100)
+   :0;
+
+  const title=document.createElement('h3');
+  title.textContent=`${percent}% completado`;
+
+  const track=document.createElement('div');
+  track.className='progress-track';
+
+  const fill=document.createElement('div');
+  fill.className='progress-fill';
+  fill.style.width=percent+'%';
+
+  track.append(fill);
+
+  content.append(
+   title,
+   track,
+   paragraph(
+    `${done} de ${trackable.length} ubicaciones registradas`
+   ),
+   paragraph(
+    'Progreso guardado en este navegador. Todavía no está sincronizado con tu cuenta.'
+   )
+  );
+
+  const totals=new Map();
+
+  for(const p of trackable){
+
+   if(!totals.has(p.kind)){
+    totals.set(p.kind,{
+     total:0,done:0,
+     name:categoryLabel(p),
+     icon:category(p).icon
+    });
+   }
+
+   const t=totals.get(p.kind);
+   t.total++;
+
+   if(found.has(p.id))t.done++;
+  }
+
+  for(const t of totals.values()){
+
+   const row=document.createElement('div');
+   row.className='category';
+
+   const name=document.createElement('span');
+   name.textContent=`${t.icon} ${t.name}`;
+
+   const count=document.createElement('span');
+   count.className='count';
+   count.textContent=`${t.done}/${t.total}`;
+
+   row.append(name,count);
+   content.append(row);
+  }
+ }
+}
+
+async function getJSON(path){
+
+ const response=await fetch(BASE+path);
+
+ if(!response.ok){
+  throw Error('HTTP '+response.status);
+ }
+
+ return response.json();
+}
+
+async function loadData(){
+
+ try{
+
+  const [data,meta]=await Promise.all([
+   getJSON('/data/locations.json'),
+   getJSON('/data/categories.json')
+  ]);
+
+  if(!Array.isArray(data)||
+     !Array.isArray(meta.kinds)){
+   throw Error('Formato de datos incompatible');
+  }
+
+  categories=new Map(
+   meta.kinds.map(c=>[c.key,c])
+  );
+
+  const ids=new Set();
+
+  locations=data.filter(p=>{
+
+   if(!p||!p.id||ids.has(p.id)||
+      !Number.isFinite(p.x)||
+      !Number.isFinite(p.y)||
+      p.x<0||p.x>1024||
+      p.y<0||p.y>1024){
+    return false;
+   }
+
+   ids.add(p.id);
+   return true;
+  });
+
+  const saved=read(':active',null);
+
+  active=new Set(
+   Array.isArray(saved)
+   ?saved
+   :locations.map(p=>p.kind)
+  );
+
+  loaded=true;
+
+  renderMarkers();
+
+  if(currentPanel){
+   renderPanel(currentPanel);
+  }
+
+ }catch(error){
+
+  $('status').textContent=
+   'Error al cargar datos: '+error.message;
+ }
+}
+
+document.querySelectorAll('[data-panel]')
+.forEach(button=>{
+
+ button.onclick=()=>{
+
+  const type=button.dataset.panel;
+
+  if(currentPanel===type){
+   closePanel();
+  }else{
+   renderPanel(type);
+  }
+ };
+});
+
+$('closePanel').onclick=closePanel;
+
+$('fullButton').onclick=async()=>{
+
+ try{
+
+  if(document.fullscreenElement){
+   await document.exitFullscreen();
+  }else{
+   await document.documentElement
+   .requestFullscreen();
+  }
+
+ }catch{
+  $('status').textContent=
+   'Pantalla completa no disponible';
+ }
 };
+
+map.on('click',closePanel);
 
 document.addEventListener(
-  'fullscreenchange',
-  () => map.invalidateSize()
+ 'fullscreenchange',
+ ()=>map.invalidateSize()
 );
 
 window.addEventListener(
-  'resize',
-  () => map.invalidateSize()
+ 'resize',
+ ()=>map.invalidateSize()
 );
 
 loadData();
 
 </script>
-
 </body>
 </html>
