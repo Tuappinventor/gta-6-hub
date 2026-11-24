@@ -1029,4 +1029,171 @@
           'error'
         );
 
-      } else if
+      } else if (!runs.length) {
+
+        showMessage(
+          'No hay ejecuciones registradas en el periodo seleccionado.'
+        );
+
+      } else {
+
+        showMessage(
+          'Estadísticas actualizadas.',
+          'success'
+        );
+      }
+
+    } catch (error) {
+
+      console.error(
+        'Error consultando automatizaciones:',
+        error.code || error.name || 'Error'
+      );
+
+      showMessage(
+        'No se han podido actualizar los datos. Comprueba Supabase y los permisos. Los datos anteriores pueden estar desactualizados.',
+        'error'
+      );
+
+    } finally {
+
+      loading = false;
+
+      $('refreshButton').disabled = false;
+      $('period').disabled = false;
+    }
+  }
+
+  // =======================================
+  // EVENTOS
+  // =======================================
+
+  function bindEvents() {
+
+    $('refreshButton')
+      .addEventListener(
+        'click',
+        refresh
+      );
+
+    $('period')
+      .addEventListener(
+        'change',
+        () => {
+
+          visibleRows = 30;
+
+          refresh();
+        }
+      );
+
+    $('serviceFilter')
+      .addEventListener(
+        'change',
+        () => {
+
+          visibleRows = 30;
+
+          renderHistory();
+        }
+      );
+
+    $('statusFilter')
+      .addEventListener(
+        'change',
+        () => {
+
+          visibleRows = 30;
+
+          renderHistory();
+        }
+      );
+
+    $('loadMore')
+      .addEventListener(
+        'click',
+        () => {
+
+          visibleRows += 30;
+
+          renderHistory();
+        }
+      );
+
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+
+        if (!document.hidden) {
+
+          refresh();
+        }
+      }
+    );
+  }
+
+  // =======================================
+  // INICIALIZACIÓN
+  // =======================================
+
+  async function init() {
+
+    if (
+      !window.supabase ||
+      !cfg.url ||
+      !cfg.anonKey
+    ) {
+
+      denyAccess(
+        'No se ha encontrado la configuración de Supabase.'
+      );
+
+      return;
+    }
+
+    db = window.supabase.createClient(
+      cfg.url,
+      cfg.anonKey
+    );
+
+    db.auth.onAuthStateChange(
+      (event) => {
+
+        if (event === 'SIGNED_OUT') {
+
+          denyAccess(
+            'La sesión se ha cerrado.'
+          );
+        }
+      }
+    );
+
+    if (!(await checkAdmin())) return;
+
+    bindEvents();
+
+    await refresh();
+
+    if (authorized) {
+
+      refreshTimer = setInterval(
+        () => {
+
+          if (!document.hidden) {
+
+            refresh();
+          }
+        },
+        60000
+      );
+    }
+  }
+
+  init().catch(() => {
+
+    denyAccess(
+      'No se ha podido iniciar el panel de automatizaciones.'
+    );
+  });
+
+})();
