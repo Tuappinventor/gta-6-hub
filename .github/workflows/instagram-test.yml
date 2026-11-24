@@ -1,0 +1,62 @@
+
+name: VICE HUB - Instagram Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-instagram:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Comprobar conexion Instagram
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import json
+          import urllib.request
+          import urllib.error
+
+          token = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
+
+          if not token:
+              raise SystemExit("Falta INSTAGRAM_ACCESS_TOKEN")
+
+          base = "https://graph.facebook.com/v27.0"
+
+          def request(path):
+              req = urllib.request.Request(
+                  base + path,
+                  headers={"Authorization": "Bearer " + token}
+              )
+
+              try:
+                  with urllib.request.urlopen(req) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as error:
+                  data = json.loads(error.read())
+                  return {
+                      "error": {
+                          "code": data.get("error", {}).get("code"),
+                          "type": data.get("error", {}).get("type")
+                      }
+                  }
+
+          print("VICE HUB - Instagram Test")
+
+          for name, path in [
+              ("Identidad", "/me?fields=id,name"),
+              ("Permisos", "/me/permissions"),
+              ("Paginas vinculadas", "/me/accounts?fields=id,name,instagram_business_account{id,username}")
+          ]:
+              print(name)
+              print(json.dumps(request(path), indent=2))
+
+          print("Diagnostico finalizado")
+          PY
+          
