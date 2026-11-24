@@ -1,12 +1,25 @@
-/* VICE HUB Maps 6.0: un único mapa interactivo, sin visor duplicado. */
-(()=>{
- const go=e=>{
-  const el=e.target.closest('[data-page="mapa"],[data-go="mapa"]');
-  if(!el)return;
-  e.preventDefault();e.stopImmediatePropagation();
-  window.location.assign('./mapa-interactivo.html');
+
+/* VICE HUB - Leonida Maps 8.2 */
+
+(() => {
+
+ const go = event => {
+
+  const element = event.target.closest(
+   '[data-page="mapa"],[data-go="mapa"]'
+  );
+
+  if (!element) return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  window.location.assign('./mapa-v8.html');
+
  };
- document.addEventListener('click',go,true);
- // El mapa anterior se mantiene en el HTML por compatibilidad, pero el menú
- // siempre abre el visor 6.0, sin superponer controles de zoom antiguos.
+
+ document.addEventListener(
+  'click', go, true
+ );
+
 })();
