@@ -1,0 +1,581 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+ content="width=device-width,initial-scale=1">
+
+<title>Leonida Maps 8.0 | VICE HUB</title>
+
+<link rel="stylesheet"
+ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #090d19;
+  color: #f5f6fc;
+  font-family: system-ui, sans-serif;
+}
+
+header {
+  height: 58px;
+  padding: 10px 15px;
+  background: #141827;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.brand {
+  font-weight: 800;
+  color: #f472b6;
+}
+
+header small {
+  display: block;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+header a {
+  color: #ddd6fe;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: calc(100dvh - 58px);
+}
+
+aside {
+  padding: 16px;
+  background: #111827;
+  overflow-y: auto;
+  border-right: 1px solid #334155;
+}
+
+h2 {
+  font-size: 18px;
+  margin: 0 0 15px;
+}
+
+input, button, select {
+  font: inherit;
+  color: white;
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+button {
+  cursor: pointer;
+}
+
+input, select {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+button:hover {
+  background: #334155;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.actions button {
+  flex: 1;
+  font-size: 12px;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  background: #0b1729;
+}
+
+#categories {
+  display: grid;
+  gap: 6px;
+}
+
+.category {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 9px;
+  background: #1e293b;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.category input {
+  width: auto;
+  margin: 0;
+  accent-color: #ec4899;
+}
+
+.category .count {
+  margin-left: auto;
+  color: #94a3b8;
+}
+
+#status {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #172033;
+  color: white;
+}
+
+.leaflet-popup-content {
+  line-height: 1.5;
+}
+
+.leaflet-popup-content a {
+  color: #f9a8d4;
+}
+
+.leaflet-container .leaflet-control-attribution {
+  background: #111827e8;
+  color: #e2e8f0;
+  font-size: 10px;
+}
+
+.leaflet-control-attribution a {
+  color: #f9a8d4;
+}
+
+@media(max-width: 700px) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #map {
+    flex: 1;
+    min-height: 0;
+  }
+
+  aside {
+    order: 2;
+    max-height: 32dvh;
+    padding: 10px;
+    border-right: 0;
+  }
+
+  #categories {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    VICE HUB · MAPS 8.0
+    <small>Explora Leonida</small>
+  </div>
+
+  <a href="./index.html">Volver a VICE HUB</a>
+</header>
+
+<div class="layout">
+
+  <aside>
+
+    <h2>Explorar el mapa</h2>
+
+    <input id="search"
+      type="search"
+      placeholder="Buscar ubicación...">
+
+    <select id="mapStyle">
+      <option value="night">🌙 Mapa nocturno</option>
+      <option value="day">☀️ Mapa diurno</option>
+    </select>
+
+    <div class="actions">
+      <button id="showAll">Mostrar todo</button>
+      <button id="hideAll">Ocultar todo</button>
+    </div>
+
+    <div class="actions">
+      <button id="resetMap">Centrar mapa</button>
+      <button id="fullscreen">Pantalla completa</button>
+    </div>
+
+    <p id="status">Cargando mapa...</p>
+
+    <div id="categories"></div>
+
+  </aside>
+
+  <main id="map"></main>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
+<script>
+'use strict';
+
+const BASE =
+  'https://fbritoferreira.github.io/gta6';
+
+const $ = id =>
+  document.getElementById(id);
+
+const bounds = L.latLngBounds(
+  [-1024, 0],
+  [0, 1024]
+);
+
+const map = L.map('map', {
+  crs: L.CRS.Simple,
+  minZoom: -3,
+  maxZoom: 7,
+  preferCanvas: true,
+  maxBounds: bounds.pad(0.15),
+  maxBoundsViscosity: 0.8
+});
+
+map.fitBounds(bounds);
+
+let tiles;
+let locations = [];
+let active = new Set();
+
+const groups = new Map();
+const categoryNames = new Map();
+
+function setStyle(style) {
+
+  if (tiles) map.removeLayer(tiles);
+
+  tiles = L.tileLayer(
+    `${BASE}/tiles/${style}/{z}/{z},{y},{x}.webp`,
+    {
+      tileSize: 256,
+      minNativeZoom: 0,
+      maxNativeZoom: 5,
+      minZoom: -3,
+      maxZoom: 7,
+      bounds,
+      noWrap: true,
+
+      attribution:
+        '<a href="https://github.com/fbritoferreira/gta6" target="_blank" rel="noopener">Open GTA 6 Map</a> · ' +
+        '<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>'
+    }
+  ).addTo(map);
+
+  tiles.on('tileerror', () => {
+    $('status').textContent =
+      'Alguna tesela no se ha podido cargar.';
+  });
+}
+
+setStyle('night');
+
+function normalize(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function popup(location) {
+
+  const content =
+    document.createElement('div');
+
+  const title =
+    document.createElement('strong');
+
+  title.textContent =
+    location.name || location.type;
+
+  content.append(title);
+
+  const description =
+    document.createElement('p');
+
+  description.textContent = [
+    location.type,
+    location.district || location.area,
+    location.description
+  ].filter(Boolean).join(' · ');
+
+  content.append(description);
+
+  const source =
+    document.createElement('a');
+
+  source.href =
+    BASE + '/?id=' +
+    encodeURIComponent(location.id);
+
+  source.target = '_blank';
+  source.rel = 'noopener';
+
+  source.textContent =
+    'Consultar ubicación original';
+
+  content.append(source);
+
+  return content;
+}
+
+function renderCategories() {
+
+  const container = $('categories');
+  container.replaceChildren();
+
+  const counts = new Map();
+
+  for (const p of locations) {
+    const key = p.kind || 'other';
+
+    counts.set(
+      key,
+      (counts.get(key) || 0) + 1
+    );
+  }
+
+  const entries = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1]);
+
+  for (const [key, count] of entries) {
+
+    const label =
+      document.createElement('label');
+
+    label.className = 'category';
+
+    const checkbox =
+      document.createElement('input');
+
+    checkbox.type = 'checkbox';
+    checkbox.checked = active.has(key);
+
+    checkbox.onchange = () => {
+      if (checkbox.checked) {
+        active.add(key);
+      } else {
+        active.delete(key);
+      }
+
+      renderMarkers();
+    };
+
+    const name =
+      document.createElement('span');
+
+    name.textContent =
+      categoryNames.get(key) || key;
+
+    const total =
+      document.createElement('span');
+
+    total.className = 'count';
+    total.textContent = count;
+
+    label.append(checkbox, name, total);
+    container.append(label);
+  }
+}
+
+function renderMarkers() {
+
+  for (const group of groups.values()) {
+    map.removeLayer(group);
+  }
+
+  groups.clear();
+
+  const query =
+    normalize($('search').value);
+
+  let visible = 0;
+
+  for (const p of locations) {
+
+    const kind = p.kind || 'other';
+
+    if (!active.has(kind)) continue;
+
+    const text = normalize([
+      p.name,
+      p.type,
+      p.kind,
+      p.district,
+      p.area,
+      p.description
+    ].join(' '));
+
+    if (!text.includes(query)) continue;
+
+    if (!groups.has(kind)) {
+      groups.set(kind, L.layerGroup());
+    }
+
+    const marker = L.circleMarker(
+      [-p.y, p.x],
+      {
+        radius: 5,
+        color: '#ffffff',
+        weight: 1,
+        fillColor: '#ec4899',
+        fillOpacity: 0.9
+      }
+    );
+
+    marker.bindPopup(() => popup(p));
+
+    marker.addTo(groups.get(kind));
+
+    visible++;
+  }
+
+  for (const group of groups.values()) {
+    group.addTo(map);
+  }
+
+  $('status').textContent =
+    `${visible} de ${locations.length} ubicaciones seleccionadas. Datos comunitarios.`;
+}
+
+async function loadData() {
+
+  try {
+
+    const response = await fetch(
+      BASE + '/data/locations.json'
+    );
+
+    if (!response.ok) {
+      throw Error('HTTP ' + response.status);
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      throw Error('Formato no compatible');
+    }
+
+    locations = data.filter(p =>
+      p &&
+      Number.isFinite(p.x) &&
+      Number.isFinite(p.y) &&
+      p.x >= 0 && p.x <= 1024 &&
+      p.y >= 0 && p.y <= 1024
+    );
+
+    for (const p of locations) {
+      const kind = p.kind || 'other';
+
+      active.add(kind);
+
+      if (!categoryNames.has(kind)) {
+        categoryNames.set(
+          kind,
+          p.type || kind
+        );
+      }
+    }
+
+    renderCategories();
+    renderMarkers();
+
+  } catch (error) {
+
+    $('status').textContent =
+      'No se pudieron cargar las ubicaciones: ' +
+      error.message;
+  }
+}
+
+$('mapStyle').onchange = event => {
+  setStyle(event.target.value);
+};
+
+$('search').oninput = renderMarkers;
+
+$('showAll').onclick = () => {
+
+  active = new Set(
+    locations.map(p => p.kind || 'other')
+  );
+
+  renderCategories();
+  renderMarkers();
+};
+
+$('hideAll').onclick = () => {
+
+  active.clear();
+
+  renderCategories();
+  renderMarkers();
+};
+
+$('resetMap').onclick = () => {
+  map.fitBounds(bounds);
+};
+
+$('fullscreen').onclick = async () => {
+
+  try {
+
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else {
+      await document.documentElement
+        .requestFullscreen();
+    }
+
+  } catch {
+
+    $('status').textContent =
+      'Pantalla completa no disponible en este navegador.';
+  }
+};
+
+document.addEventListener(
+  'fullscreenchange',
+  () => map.invalidateSize()
+);
+
+window.addEventListener(
+  'resize',
+  () => map.invalidateSize()
+);
+
+loadData();
+
+</script>
+
+</body>
+</html>
