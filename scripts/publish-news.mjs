@@ -274,6 +274,35 @@ let calls = 0;
 
 const maxCalls = 3;
 
+
+const ALLOWED_CATEGORIES = [
+  'actualidad',
+  'rumores',
+  'filtraciones',
+  'trailers',
+  'lanzamiento',
+  'actualizaciones',
+  'gameplay',
+  'mapa',
+  'personajes',
+  'vehiculos',
+  'armas',
+  'propiedades',
+  'musica',
+  'online',
+  'guias',
+  'trucos',
+  'dinero',
+  'misiones',
+  'coleccionables',
+  'secretos',
+  'logros',
+  'curiosidades',
+  'rendimiento',
+  'errores'
+];
+
+
 // Instrucciones editoriales ampliadas.
 
 const instructions = `
