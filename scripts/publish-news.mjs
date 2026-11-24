@@ -582,15 +582,38 @@ for (const item of items) {
     continue;
   }
 
-  const category = [
-    'actualidad',
-    'rumores',
-    'filtraciones',
-    'trailers',
-    'guias'
-  ].includes(result.category)
-    ? result.category
-    : 'actualidad';
+  
+const proposedCategories = [
+  result.category,
+  ...(Array.isArray(result.categories)
+    ? result.categories
+    : [])
+].filter(c => ALLOWED_CATEGORIES.includes(c));
+
+const category = proposedCategories.includes('filtraciones')
+  ? 'filtraciones'
+  : proposedCategories.includes('rumores')
+    ? 'rumores'
+    : proposedCategories[0] || 'actualidad';
+
+const categories = [
+  ...new Set([
+    category,
+    ...proposedCategories
+  ])
+].slice(0, 5);
+
+const tags = [
+  ...new Set(
+    (Array.isArray(result.tags)
+      ? result.tags
+      : [])
+      .filter(t => typeof t === 'string')
+      .map(t => t.trim().toLowerCase().slice(0, 60))
+      .filter(Boolean)
+  )
+].slice(0, 8);
+
 
   const hostname = original
     ? new URL(original.url).hostname.toLowerCase()
