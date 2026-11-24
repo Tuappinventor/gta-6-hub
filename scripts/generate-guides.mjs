@@ -2,40 +2,31 @@
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'node:crypto';
+import { startAutomation } from './automation-logger.mjs';
 
-// VICE HUB — AutoGuides 3.5
-// Categorías ampliadas y etiquetas automáticas.
+// VICE HUB — AutoGuides 3.6
+// Generación de guías y seguimiento de actividad.
 
-for (const key of [
-  'SUPABASE_URL',
-  'SUPABASE_SERVICE_ROLE_KEY',
-  'OPENAI_API_KEY'
-]) {
-  if (!process.env[key]) {
-    throw new Error(`Falta ${key}`);
-  }
-}
+const MODEL =
+  process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
-const db = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false
-    }
-  }
-);
-
-const ai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const MAX_AI_CALLS = 2;
 const MAX_DAILY_GUIDES = 1;
 
-const SOURCE = 'https://www.rockstargames.com/VI';
+const SOURCE =
+  'https://www.rockstargames.com/VI';
+
+const logger = await startAutomation(
+  'autoguides',
+  { model: MODEL }
+);
+
+let db;
+let ai;
+
+// ==========================================
+// TEMAS DISPONIBLES
+// ==========================================
 
 const topics = [
   {
@@ -172,6 +163,10 @@ const topics = [
   }
 ];
 
+// ==========================================
+// ESTADÍSTICAS
+// ==========================================
+
 const stats = {
   checked: 0,
   unchanged: 0,
@@ -202,12 +197,15 @@ const clean = value =>
     .trim();
 
 function normalizeTags(tags) {
+
   if (!Array.isArray(tags)) return [];
 
   return [
     ...new Set(
       tags
-        .filter(tag => typeof tag === 'string')
+        .filter(tag =>
+          typeof tag === 'string'
+        )
         .map(tag =>
           tag
             .trim()
@@ -220,57 +218,118 @@ function normalizeTags(tags) {
   ].slice(0, 8);
 }
 
+function updateMetadata() {
+
+  logger.setMetadata({
+    topics_available: topics.length,
+    topics_checked: stats.checked,
+    topics_unchanged: stats.unchanged,
+    topics_skipped: stats.skipped,
+    max_ai_calls: MAX_AI_CALLS,
+    daily_creation_limit: MAX_DAILY_GUIDES
+  });
+}
+
+// ==========================================
+// RECUPERAR FUENTE OFICIAL
+// ==========================================
+
 async function getOfficialPage() {
+
   const response = await fetch(SOURCE, {
+
     signal: AbortSignal.timeout(20000),
+
     redirect: 'follow',
+
     headers: {
-      'User-Agent': 'Mozilla/5.0 VICEHUB-AutoGuides/3.5',
+      'User-Agent':
+        'Mozilla/5.0 VICEHUB-AutoGuides/3.5',
       Accept: 'text/html'
     }
   });
 
   if (!response.ok) {
-    throw new Error(`Rockstar HTTP ${response.status}`);
+
+    throw new Error(
+      `Rockstar HTTP ${response.status}`
+    );
   }
 
-  const host = new URL(response.url).hostname;
+  const host =
+    new URL(response.url).hostname;
 
   if (
     host !== 'rockstargames.com' &&
     !host.endsWith('.rockstargames.com')
   ) {
-    throw new Error('Fuente no oficial');
+
+    throw new Error(
+      'Fuente no oficial'
+    );
   }
 
   const html = await response.text();
 
   const main =
-    html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i) ||
-    html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i);
+    html.match(
+      /<main\b[^>]*>([\s\S]*?)<\/main>/i
+    ) ||
+    html.match(
+      /<article\b[^>]*>([\s\S]*?)<\/article>/i
+    );
 
-  const body = clean(main?.[1] || html).slice(0, 50000);
+  const body =
+    clean(main?.[1] || html)
+      .slice(0, 50000);
 
   if (body.length < 900) {
-    throw new Error('Contenido oficial insuficiente');
+
+    throw new Error(
+      'Contenido oficial insuficiente'
+    );
   }
 
   return body;
 }
 
-async function generateGuide(topic, sourceText, existing) {
+// ==========================================
+// GENERAR GUÍA CON OPENAI
+// ==========================================
+
+async function generateGuide(
+  topic,
+  sourceText,
+  existing
+) {
+
   stats.aiCalls++;
 
-  const response = await ai.chat.completions.create({
-    model: MODEL,
-    temperature: 0,
-    response_format: {
-      type: 'json_object'
-    },
-    messages: [
-      {
-        role: 'system',
-        content: `
+  logger.apiCall();
+
+  logger.setMetadata({
+    last_topic: topic.key
+  });
+
+  updateMetadata();
+
+  await logger.checkpoint();
+
+  const response =
+    await ai.chat.completions.create({
+
+      model: MODEL,
+
+      temperature: 0,
+
+      response_format: {
+        type: 'json_object'
+      },
+
+      messages: [
+        {
+          role: 'system',
+          content: `
 Eres redactor profesional de VICE HUB,
 portal independiente especializado en
 Grand Theft Auto VI.
@@ -382,73 +441,193 @@ de la guía en aproximadamente 40-80 palabras.
 
 No inventes enlaces ni citas.
 `
-      },
-      {
-        role: 'user',
-        content: JSON.stringify({
-          topic: topic.name,
-          category: topic.category,
-          focus: topic.focus,
-          source: SOURCE,
-          officialText: sourceText,
-          previousGuide: existing
-            ? {
-                title: existing.title,
-                body: existing.body
-              }
-            : null
-        })
-      }
-    ]
-  });
+        },
+        {
+          role: 'user',
+
+          content: JSON.stringify({
+
+            topic: topic.name,
+
+            category: topic.category,
+
+            focus: topic.focus,
+
+            source: SOURCE,
+
+            officialText: sourceText,
+
+            previousGuide: existing
+              ? {
+                  title: existing.title,
+                  body: existing.body
+                }
+              : null
+          })
+        }
+      ]
+    });
+
+  // ========================================
+  // REGISTRAR CONSUMO
+  // ========================================
 
   const usage = response.usage || {};
 
-  stats.inputTokens += usage.prompt_tokens || 0;
-  stats.outputTokens += usage.completion_tokens || 0;
-  stats.totalTokens += usage.total_tokens || 0;
+  stats.inputTokens +=
+    usage.prompt_tokens || 0;
 
-  console.log(
-    'Consumo IA:',
-    JSON.stringify(usage)
-  );
+  stats.outputTokens +=
+    usage.completion_tokens || 0;
+
+  stats.totalTokens +=
+    usage.total_tokens || 0;
+
+  if (response.usage) {
+
+    logger.recordUsage(response.usage);
+
+    console.log(
+      'Consumo IA:',
+      JSON.stringify(response.usage)
+    );
+
+  } else {
+
+    logger.setMetadata({
+      usage_incomplete: true
+    });
+
+    console.log(
+      'Consumo de tokens no disponible.'
+    );
+  }
+
+  await logger.checkpoint();
 
   return JSON.parse(
-    response.choices[0]?.message?.content || '{}'
+    response.choices[0]
+      ?.message?.content || '{}'
   );
 }
 
+// ==========================================
+// PROCESO PRINCIPAL
+// ==========================================
+
 async function main() {
-  console.log('VICE HUB — AutoGuides 3.5');
-  console.log(`Temas disponibles: ${topics.length}`);
-  console.log(`Modelo IA: ${MODEL}`);
+
+  for (const key of [
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'OPENAI_API_KEY'
+  ]) {
+
+    if (!process.env[key]) {
+
+      throw new Error(`Falta ${key}`);
+    }
+  }
+
+  db = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    }
+  );
+
+  ai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+
+  console.log(
+    'VICE HUB — AutoGuides 3.6'
+  );
+
+  console.log(
+    `Temas disponibles: ${topics.length}`
+  );
+
+  console.log(
+    `Modelo IA: ${MODEL}`
+  );
+
+  updateMetadata();
+
+  // ========================================
+  // CONTROL DIARIO
+  // ========================================
 
   const dayStart = new Date();
+
   dayStart.setUTCHours(0, 0, 0, 0);
 
-  const { count, error: countError } = await db
+  const {
+    count,
+    error: countError
+  } = await db
     .from('articles')
     .select('id', {
       count: 'exact',
       head: true
     })
     .eq('kind', 'guide')
-    .gte('created_at', dayStart.toISOString());
+    .gte(
+      'created_at',
+      dayStart.toISOString()
+    );
 
   if (countError) throw countError;
 
-  const canCreate = (count || 0) < MAX_DAILY_GUIDES;
+  const canCreate =
+    (count || 0) < MAX_DAILY_GUIDES;
 
-  console.log(`Guías creadas hoy: ${count || 0}`);
-
-  const sourceText = await getOfficialPage();
-  const sourceHash = hash(sourceText);
+  logger.setMetadata({
+    guides_today_before: count || 0,
+    can_create: canCreate,
+    official_source: SOURCE
+  });
 
   console.log(
-    `Fuente oficial leída: ${sourceText.length} caracteres`
+    `Guías creadas hoy: ${count || 0}`
   );
 
-  const { data: guides, error: listError } = await db
+  // ========================================
+  // CONSULTAR ROCKSTAR
+  // ========================================
+
+  const sourceText =
+    await getOfficialPage();
+
+  const sourceHash =
+    hash(sourceText);
+
+  logger.setMetadata({
+    source_available: true,
+    source_characters: sourceText.length,
+    source_hash: sourceHash
+  });
+
+  console.log(
+    `Fuente oficial leída: ${
+      sourceText.length
+    } caracteres`
+  );
+
+  await logger.checkpoint();
+
+  // ========================================
+  // CONSULTAR GUÍAS EXISTENTES
+  // ========================================
+
+  const {
+    data: guides,
+    error: listError
+  } = await db
     .from('articles')
     .select(
       'id,title,body,guide_key,source_hash,status'
@@ -463,17 +642,23 @@ async function main() {
       .map(g => [g.guide_key, g])
   );
 
-  // Rotación diaria de temas.
+  logger.setMetadata({
+    existing_guides: guides?.length || 0,
+    covered_topics: existingGuides.size
+  });
+
+  // ========================================
+  // ROTACIÓN DIARIA
+  // ========================================
 
   const offset =
-    Math.floor(Date.now() / 86400000) % topics.length;
+    Math.floor(Date.now() / 86400000) %
+    topics.length;
 
   const rotated = [
     ...topics.slice(offset),
     ...topics.slice(0, offset)
   ];
-
-  // Priorizar temas sin guía.
 
   rotated.sort(
     (a, b) =>
@@ -481,50 +666,85 @@ async function main() {
       Number(existingGuides.has(b.key))
   );
 
+  // ========================================
+  // PROCESAR TEMAS
+  // ========================================
+
   for (const topic of rotated) {
-    if (stats.aiCalls >= MAX_AI_CALLS) break;
+
+    if (
+      stats.aiCalls >= MAX_AI_CALLS
+    ) {
+      break;
+    }
 
     stats.checked++;
 
-    const existing = existingGuides.get(topic.key);
+    const existing =
+      existingGuides.get(topic.key);
 
-    if (!existing && !canCreate) continue;
-
-    if (!existing && stats.created >= MAX_DAILY_GUIDES) {
+    if (!existing && !canCreate) {
       continue;
     }
 
-    // No modificar borradores ni contenido archivado.
-
-    if (existing && existing.status !== 'published') {
+    if (
+      !existing &&
+      stats.created >= MAX_DAILY_GUIDES
+    ) {
       continue;
     }
 
-    if (existing?.source_hash === sourceHash) {
+    // No modificar borradores ni archivados.
+
+    if (
+      existing &&
+      existing.status !== 'published'
+    ) {
+      continue;
+    }
+
+    // No gastar IA si la fuente no ha cambiado.
+
+    if (
+      existing?.source_hash === sourceHash
+    ) {
+
       stats.unchanged++;
 
-      console.log(`Sin cambios: ${topic.name}`);
+      console.log(
+        `Sin cambios: ${topic.name}`
+      );
 
       continue;
     }
 
-    console.log(`Analizando: ${topic.name}`);
-    console.log(`Categoría: ${topic.category}`);
-
-    const result = await generateGuide(
-      topic,
-      sourceText,
-      existing
+    console.log(
+      `Analizando: ${topic.name}`
     );
 
+    console.log(
+      `Categoría: ${topic.category}`
+    );
+
+    const result =
+      await generateGuide(
+        topic,
+        sourceText,
+        existing
+      );
+
     if (result.decision !== 'publish') {
+
       stats.skipped++;
 
       console.log(
-        `Descartada: ${topic.name} — ${result.reason || ''}`
+        `Descartada: ${
+          topic.name
+        } — ${result.reason || ''}`
       );
 
       if (existing) {
+
         const { error } = await db
           .from('articles')
           .update({
@@ -536,26 +756,34 @@ async function main() {
         if (error) throw error;
       }
 
+      updateMetadata();
+
+      await logger.checkpoint();
+
       continue;
     }
 
-    const title = String(result.title || '')
-      .trim()
-      .slice(0, 180);
+    const title =
+      String(result.title || '')
+        .trim()
+        .slice(0, 180);
 
-    const summary = String(result.summary || '')
-      .trim()
-      .slice(0, 600);
+    const summary =
+      String(result.summary || '')
+        .trim()
+        .slice(0, 600);
 
-    const body = String(result.body || '')
-      .trim()
-      .slice(0, 20000);
+    const body =
+      String(result.body || '')
+        .trim()
+        .slice(0, 20000);
 
     if (
       title.length < 15 ||
       summary.length < 40 ||
       body.length < 1200
     ) {
+
       stats.skipped++;
 
       console.log(
@@ -565,9 +793,11 @@ async function main() {
       continue;
     }
 
-    const timestamp = new Date().toISOString();
+    const timestamp =
+      new Date().toISOString();
 
-    const category = topic.category || 'guias';
+    const category =
+      topic.category || 'guias';
 
     const categories = [
       ...new Set([
@@ -576,49 +806,103 @@ async function main() {
       ])
     ];
 
-    const tags = normalizeTags(result.tags);
+    const tags =
+      normalizeTags(result.tags);
 
     const content = {
+
       title,
+
       summary,
+
       body,
+
       category,
+
       categories,
+
       tags,
+
       guide_topic: topic.name,
+
       guide_key: topic.key,
+
       source_hash: sourceHash,
+
       guide_updated_at: timestamp,
+
       verification_level: 'official',
+
       verification_notes:
         'AutoGuides 3.5 · Fuente oficial Rockstar Games · ' +
-        String(result.reason || '').slice(0, 400)
+        String(result.reason || '')
+          .slice(0, 400)
     };
 
+    // ======================================
+    // ACTUALIZAR GUÍA EXISTENTE
+    // ======================================
+
     if (existing) {
-      const { error } = await db
+
+      const {
+        data: updated,
+        error
+      } = await db
         .from('articles')
         .update(content)
         .eq('id', existing.id)
-        .eq('status', 'published');
+        .eq('status', 'published')
+        .select('id');
 
       if (error) throw error;
 
-      stats.updated++;
+      if (updated?.length) {
 
-      console.log(`Guía actualizada: ${title}`);
+        stats.updated++;
+
+        logger.increment(
+          'guides_updated'
+        );
+
+        console.log(
+          `Guía actualizada: ${title}`
+        );
+
+      } else {
+
+        stats.skipped++;
+
+        console.log(
+          'Guía modificada por otro proceso.'
+        );
+      }
 
     } else {
+
+      // ====================================
+      // CREAR NUEVA GUÍA
+      // ====================================
+
       const { error } = await db
         .from('articles')
         .insert({
+
           ...content,
-          slug: `gta-vi-guia-${topic.key}`,
+
+          slug:
+            `gta-vi-guia-${topic.key}`,
+
           kind: 'guide',
+
           status: 'published',
+
           featured: false,
+
           published_at: timestamp,
+
           source_url: SOURCE,
+
           source_name: 'Rockstar Games'
         });
 
@@ -626,7 +910,13 @@ async function main() {
 
       stats.created++;
 
-      console.log(`Nueva guía publicada: ${title}`);
+      logger.increment(
+        'guides_created'
+      );
+
+      console.log(
+        `Nueva guía publicada: ${title}`
+      );
     }
 
     console.log(
@@ -638,22 +928,75 @@ async function main() {
       'Etiquetas:',
       tags.join(', ')
     );
+
+    updateMetadata();
+
+    await logger.checkpoint();
   }
 
-  console.log('============================');
-  console.log('RESUMEN AUTOGUIDES 3.5');
-  console.log('============================');
+  // ========================================
+  // RESUMEN FINAL
+  // ========================================
+
+  updateMetadata();
+
+  logger.setMetadata({
+    guides_today_after:
+      (count || 0) + stats.created
+  });
+
+  console.log(
+    '============================'
+  );
+
+  console.log(
+    'RESUMEN AUTOGUIDES 3.6'
+  );
+
+  console.log(
+    '============================'
+  );
 
   console.log(
     JSON.stringify(stats, null, 2)
   );
+
+  const message =
+    `${stats.created} guías creadas; ` +
+    `${stats.updated} actualizadas; ` +
+    `${stats.unchanged} sin cambios; ` +
+    `${stats.skipped} descartadas; ` +
+    `${stats.aiCalls} llamadas IA`;
+
+  if (!stats.aiCalls) {
+
+    await logger.skip(
+      'Sin temas elegibles que requieran generación o actualización.'
+    );
+
+  } else {
+
+    await logger.success(message);
+  }
 }
 
-main().catch(error => {
+// ==========================================
+// EJECUCIÓN PROTEGIDA
+// ==========================================
+
+try {
+
+  await main();
+
+} catch (error) {
+
+  updateMetadata();
+
+  await logger.fail(error);
+
   console.error(
-    'AutoGuides 3.5 ERROR:',
-    error
+    'AutoGuides 3.6 ha finalizado con error.'
   );
 
   process.exitCode = 1;
-});
+}
