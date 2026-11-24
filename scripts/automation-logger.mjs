@@ -1,10 +1,13 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// ==========================================
+import {
+  calculateOpenAICost,
+  PRICING_VERSION
+} from './openai-pricing.mjs';
+
 // VICE HUB 3.6
-// Automation Logger
-// ==========================================
+// Automation Logger + Control económico
 
 const SERVICES = [
   'autonews',
@@ -30,7 +33,6 @@ const COUNTERS = [
 ];
 
 function getDatabase() {
-
   if (
     !process.env.SUPABASE_URL ||
     !process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -52,10 +54,9 @@ function getDatabase() {
   );
 }
 
-// Evitar almacenar credenciales en registros.
+// Evitar almacenar credenciales.
 
 function safeMessage(value) {
-
   let message = String(
     value?.message || value || ''
   );
@@ -65,7 +66,6 @@ function safeMessage(value) {
     'SUPABASE_SERVICE_ROLE_KEY',
     'INSTAGRAM_ACCESS_TOKEN'
   ]) {
-
     const secret = process.env[key];
 
     if (secret) {
@@ -84,7 +84,6 @@ function safeMessage(value) {
 }
 
 function number(value) {
-
   const n = Number(value);
 
   return Number.isFinite(n) && n >= 0
@@ -93,14 +92,13 @@ function number(value) {
 }
 
 // ==========================================
-// INICIAR REGISTRO
+// INICIAR AUTOMATIZACIÓN
 // ==========================================
 
 export async function startAutomation(
   service,
   options = {}
 ) {
-
   if (!SERVICES.includes(service)) {
     throw new Error(
       `Servicio desconocido: ${service}`
@@ -119,12 +117,20 @@ export async function startAutomation(
   let pendingImages = null;
   let estimatedCost = null;
 
+  let pricedCalls = 0;
+  let usageRecords = 0;
+
+  const pricingErrors = new Set();
+
   let model =
     options.model ||
     process.env.OPENAI_MODEL ||
     null;
 
-  let metadata = {};
+  let metadata = {
+    pricing_version: PRICING_VERSION,
+    currency: 'USD'
+  };
 
   const githubRunId =
     process.env.GITHUB_RUN_ID || null;
@@ -138,7 +144,6 @@ export async function startAutomation(
       : null;
 
   try {
-
     db = getDatabase();
 
     const { data, error } = await db
@@ -153,7 +158,8 @@ export async function startAutomation(
           'manual',
         github_run_id: githubRunId,
         github_run_url: githubRunUrl,
-        model
+        model,
+        metadata
       })
       .select('id')
       .single();
@@ -167,7 +173,6 @@ export async function startAutomation(
     );
 
   } catch (error) {
-
     console.warn(
       '[LOGGER] No se pudo iniciar:',
       safeMessage(error)
@@ -179,58 +184,63 @@ export async function startAutomation(
   // ========================================
 
   function increment(key, amount = 1) {
-
-    if (!COUNTERS.includes(key)) {
-      return;
-    }
+    if (!COUNTERS.includes(key)) return;
 
     counters[key] += number(amount);
   }
 
   function set(key, value) {
-
-    if (!COUNTERS.includes(key)) {
-      return;
-    }
+    if (!COUNTERS.includes(key)) return;
 
     counters[key] = number(value);
   }
 
   function setModel(value) {
-
     model = String(value || '')
       .slice(0, 100);
   }
 
   function setPendingImages(value) {
-
     pendingImages = number(value);
   }
 
   function setMetadata(value = {}) {
-
     metadata = {
       ...metadata,
       ...value
     };
   }
 
-  // ========================================
-  // REGISTRAR LLAMADA A OPENAI
-  // ========================================
-
   function apiCall() {
-
     increment('api_calls');
   }
 
   // ========================================
-  // REGISTRAR CONSUMO DE TOKENS
+  // REGISTRAR COSTE
+  // ========================================
+
+  function addEstimatedCost(usd) {
+    const value = Number(usd);
+
+    if (
+      usd !== null &&
+      usd !== undefined &&
+      Number.isFinite(value) &&
+      value >= 0
+    ) {
+      estimatedCost =
+        (estimatedCost ?? 0) + value;
+    }
+  }
+
+  // ========================================
+  // REGISTRAR TOKENS Y CALCULAR COSTE
   // ========================================
 
   function recordUsage(usage = {}) {
-
     if (!usage) return;
+
+    usageRecords++;
 
     const input = number(
       usage.input_tokens ??
@@ -258,26 +268,107 @@ export async function startAutomation(
     increment('output_tokens', output);
     increment('total_tokens', total);
     increment('cached_tokens', cached);
+
+    try {
+      const cost = calculateOpenAICost(
+        model,
+        usage,
+        {
+          textOnlyImage:
+            service === 'autoimages'
+        }
+      );
+
+      if (
+        cost.complete &&
+        typeof cost.usd === 'number' &&
+        Number.isFinite(cost.usd) &&
+        cost.usd >= 0
+      ) {
+        addEstimatedCost(cost.usd);
+
+        pricedCalls++;
+
+        console.log(
+          `[LOGGER] Coste estimado: ${
+            cost.usd.toFixed(8)
+          } USD`
+        );
+
+      } else {
+        pricingErrors.add(
+          safeMessage(
+            cost.reason ||
+            'Coste no disponible'
+          )
+        );
+      }
+
+    } catch (error) {
+      pricingErrors.add(
+        safeMessage(error)
+      );
+
+      console.warn(
+        '[LOGGER] Error calculando coste:',
+        safeMessage(error)
+      );
+    }
   }
 
   // ========================================
-  // REGISTRAR COSTE ESTIMADO
+  // ESTADO ECONÓMICO
   // ========================================
 
-  function addEstimatedCost(usd) {
+  function pricingMetadata() {
+    const unpricedCalls = Math.max(
+      0,
+      counters.api_calls - pricedCalls
+    );
 
-    const value = Number(usd);
+    const complete =
+      pricedCalls === counters.api_calls &&
+      pricingErrors.size === 0;
+
+    return {
+      ...metadata,
+
+      pricing_version: PRICING_VERSION,
+
+      currency: 'USD',
+
+      usage_records: usageRecords,
+
+      priced_calls: pricedCalls,
+
+      unpriced_calls: unpricedCalls,
+
+      cost_complete: complete,
+
+      partial_cost_usd:
+        estimatedCost,
+
+      pricing_errors:
+        [...pricingErrors]
+    };
+  }
+
+  function storedCost() {
+    // No mostrar un coste parcial
+    // como si fuera el total.
+
+    if (counters.api_calls === 0) {
+      return 0;
+    }
 
     if (
-      usd !== null &&
-      usd !== undefined &&
-      Number.isFinite(value) &&
-      value >= 0
+      pricedCalls !== counters.api_calls ||
+      pricingErrors.size > 0
     ) {
-
-      estimatedCost =
-        (estimatedCost ?? 0) + value;
+      return null;
     }
+
+    return estimatedCost;
   }
 
   // ========================================
@@ -285,29 +376,33 @@ export async function startAutomation(
   // ========================================
 
   async function checkpoint() {
-
-    if (!db || !runId || finished) {
-      return;
-    }
+    if (!db || !runId || finished) return;
 
     try {
-
       const { error } = await db
         .from('automation_runs')
         .update({
           ...counters,
+
           model,
-          pending_images: pendingImages,
-          estimated_cost_usd: estimatedCost,
-          duration_ms: Date.now() - started,
-          metadata
+
+          pending_images:
+            pendingImages,
+
+          estimated_cost_usd:
+            storedCost(),
+
+          duration_ms:
+            Date.now() - started,
+
+          metadata:
+            pricingMetadata()
         })
         .eq('id', runId);
 
       if (error) throw error;
 
     } catch (error) {
-
       console.warn(
         '[LOGGER] Error guardando progreso:',
         safeMessage(error)
@@ -324,7 +419,6 @@ export async function startAutomation(
     message = '',
     error = null
   ) {
-
     if (finished) return;
 
     if (
@@ -334,10 +428,7 @@ export async function startAutomation(
       status = 'error';
     }
 
-    const duration = Date.now() - started;
-
     const result = {
-
       ...counters,
 
       status,
@@ -347,18 +438,23 @@ export async function startAutomation(
       finished_at:
         new Date().toISOString(),
 
-      duration_ms: duration,
+      duration_ms:
+        Date.now() - started,
 
-      pending_images: pendingImages,
+      pending_images:
+        pendingImages,
 
-      estimated_cost_usd: estimatedCost,
+      estimated_cost_usd:
+        storedCost(),
 
-      message: safeMessage(message),
+      message:
+        safeMessage(message),
 
       error_message:
         error ? safeMessage(error) : null,
 
-      metadata
+      metadata:
+        pricingMetadata()
     };
 
     console.log(
@@ -375,7 +471,6 @@ export async function startAutomation(
     }
 
     try {
-
       const { error: updateError } = await db
         .from('automation_runs')
         .update(result)
@@ -390,7 +485,6 @@ export async function startAutomation(
       );
 
     } catch (error) {
-
       console.warn(
         '[LOGGER] Error finalizando:',
         safeMessage(error)
@@ -403,7 +497,6 @@ export async function startAutomation(
   // ========================================
 
   return {
-
     id: runId,
 
     increment,
@@ -445,6 +538,5 @@ export async function startAutomation(
     getCounters() {
       return { ...counters };
     }
-
   };
 }
