@@ -1,0 +1,461 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1">
+
+<meta name="robots" content="noindex,nofollow">
+
+<title>Automatizaciones | VICE HUB</title>
+
+<link rel="stylesheet"
+      href="./automatizaciones.css">
+
+<script src="./config.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+</head>
+
+<body>
+
+<header class="topbar">
+
+  <div class="brand">
+    VICE <span>HUB</span>
+    <small>CONTROL EDITORIAL · 3.6</small>
+  </div>
+
+  <a class="button secondary" href="./index.html">
+    Volver a VICE HUB
+  </a>
+
+</header>
+
+<main class="dashboard">
+
+  <section id="accessGate" class="panel">
+
+    <h2>Comprobando acceso</h2>
+
+    <p id="accessMessage">
+      Verificando permisos de administrador...
+    </p>
+
+    <a class="button" href="./index.html">
+      Ir a VICE HUB
+    </a>
+
+  </section>
+
+  <div id="dashboardContent" hidden>
+
+    <section class="dashboard-heading">
+
+      <div>
+
+        <span class="eyebrow">
+          ADMINISTRACIÓN PRIVADA
+        </span>
+
+        <h1>Control de automatizaciones</h1>
+
+        <p>
+          Actividad editorial, consumo de API
+          y estado de los servicios.
+        </p>
+
+      </div>
+
+      <div class="controls">
+
+        <select id="period"
+                aria-label="Periodo">
+
+          <option value="today">
+            Hoy
+          </option>
+
+          <option value="7">
+            Últimos 7 días
+          </option>
+
+          <option value="30">
+            Últimos 30 días
+          </option>
+
+        </select>
+
+        <button id="refreshButton">
+          Actualizar
+        </button>
+
+      </div>
+
+    </section>
+
+    <p id="dashboardMessage"
+       class="message"
+       role="status">
+    </p>
+
+    <section class="metrics">
+
+      <article class="metric">
+
+        <span>Noticias detectadas</span>
+
+        <strong id="detected">—</strong>
+
+        <small>Entradas RSS acumuladas</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Noticias publicadas</span>
+
+        <strong id="published">—</strong>
+
+        <small>Publicación automática</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Borradores generados</span>
+
+        <strong id="drafts">—</strong>
+
+        <small>Para revisión editorial</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Guías creadas</span>
+
+        <strong id="guidesCreated">—</strong>
+
+        <small>Nuevas publicaciones</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Guías actualizadas</span>
+
+        <strong id="guidesUpdated">—</strong>
+
+        <small>Contenido revisado</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Imágenes generadas</span>
+
+        <strong id="imagesGenerated">—</strong>
+
+        <small>Generaciones de OpenAI</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Imágenes vinculadas</span>
+
+        <strong id="imagesLinked">—</strong>
+
+        <small>Asignadas a publicaciones</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Imágenes pendientes</span>
+
+        <strong id="pendingImages">—</strong>
+
+        <small>Última consulta registrada</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Publicaciones clasificadas</span>
+
+        <strong id="classified">—</strong>
+
+        <small>Categorías y etiquetas</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Llamadas a OpenAI</span>
+
+        <strong id="apiCalls">—</strong>
+
+        <small>Solicitudes iniciadas</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Tokens consumidos</span>
+
+        <strong id="totalTokens">—</strong>
+
+        <small>Consumo registrado</small>
+
+      </article>
+
+      <article class="metric">
+
+        <span>Ejecuciones con errores</span>
+
+        <strong id="errors">—</strong>
+
+        <small>Requieren comprobación</small>
+
+      </article>
+
+    </section>
+
+    <section class="panel">
+
+      <h2>Objetivos diarios</h2>
+
+      <p class="muted">
+        Actividad registrada desde las 00:00 UTC.
+      </p>
+
+      <div id="dailyGoals"></div>
+
+    </section>
+
+    <section class="panel">
+
+      <h2>Consumo de OpenAI</h2>
+
+      <div class="metrics compact">
+
+        <article class="metric">
+
+          <span>Tokens de entrada</span>
+
+          <strong id="inputTokens">—</strong>
+
+        </article>
+
+        <article class="metric">
+
+          <span>Tokens de salida</span>
+
+          <strong id="outputTokens">—</strong>
+
+        </article>
+
+        <article class="metric">
+
+          <span>Tokens en caché</span>
+
+          <strong id="cachedTokens">—</strong>
+
+        </article>
+
+        <article class="metric">
+
+          <span>Coste estimado USD</span>
+
+          <strong id="estimatedCost">—</strong>
+
+        </article>
+
+      </div>
+
+      <p id="costMessage" class="muted"></p>
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Modelo</th>
+              <th>Llamadas</th>
+              <th>Entrada</th>
+              <th>Salida</th>
+              <th>Total</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="modelRows"></tbody>
+
+        </table>
+
+      </div>
+
+      <a class="button secondary"
+         href="https://platform.openai.com/usage"
+         target="_blank"
+         rel="noopener noreferrer">
+
+        Consultar consumo oficial de OpenAI
+
+      </a>
+
+    </section>
+
+    <section class="panel">
+
+      <h2>Estado de los servicios</h2>
+
+      <div id="serviceGrid"
+           class="service-grid">
+      </div>
+
+    </section>
+
+    <section class="panel">
+
+      <div class="section-heading">
+
+        <h2>Historial de ejecuciones</h2>
+
+        <div class="controls">
+
+          <select id="serviceFilter"
+                  aria-label="Servicio">
+
+            <option value="all">
+              Todos los servicios
+            </option>
+
+            <option value="autonews">
+              AutoNews
+            </option>
+
+            <option value="autoimages">
+              AutoImages
+            </option>
+
+            <option value="autoguides">
+              AutoGuides
+            </option>
+
+            <option value="autocategories">
+              AutoCategories
+            </option>
+
+          </select>
+
+          <select id="statusFilter"
+                  aria-label="Estado">
+
+            <option value="all">
+              Todos los estados
+            </option>
+
+            <option value="success">
+              Correctas
+            </option>
+
+            <option value="skipped">
+              Omitidas
+            </option>
+
+            <option value="error">
+              Errores
+            </option>
+
+            <option value="running">
+              En ejecución
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+
+              <th>Fecha</th>
+
+              <th>Servicio</th>
+
+              <th>Estado</th>
+
+              <th>Duración</th>
+
+              <th>API</th>
+
+              <th>Tokens</th>
+
+              <th>Resultado</th>
+
+              <th>GitHub</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody id="historyRows"></tbody>
+
+        </table>
+
+      </div>
+
+      <p id="historyCount"
+         class="muted">
+      </p>
+
+      <button id="loadMore"
+              class="secondary"
+              hidden>
+
+        Mostrar más ejecuciones
+
+      </button>
+
+    </section>
+
+    <section class="panel">
+
+      <h2>Errores recientes</h2>
+
+      <div id="errorList"></div>
+
+    </section>
+
+    <footer>
+
+      <p id="lastUpdate"></p>
+
+      <p>
+        VICE HUB 3.6 · Control de automatizaciones
+      </p>
+
+    </footer>
+
+  </div>
+
+</main>
+
+<script src="./automatizaciones.js"></script>
+
+</body>
+</html>
