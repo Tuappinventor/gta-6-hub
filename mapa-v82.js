@@ -16,6 +16,19 @@ const favorites = new Set(
  read(':favorites-v82', [])
 );
 
+window.VICE_MAP_FAVORITES = function(ids) {
+
+ favorites.clear();
+
+ for(const id of ids) {
+  favorites.add(id);
+ }
+
+ if(currentPanel === 'favorites') {
+  renderPanel('favorites');
+ }
+};
+
 const originalMatches = matches;
 const originalPopup = popup;
 const originalPanel = renderPanel;
