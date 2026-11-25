@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./media-v34.css">
   <link rel="stylesheet" href="./map-v4.css">
   <link rel="stylesheet" href="./map-zoom.css">
+  <link rel="stylesheet" href="./garaje.css">
 <meta name="description" content="Noticias y guías de GTA VI, con fuentes y seguimiento de rumores y anuncios oficiales.">
 <link rel="canonical" href="https://gta-6-hub-eta.vercel.app/">
 <meta property="og:title" content="VICE HUB | Noticias GTA VI">
@@ -248,7 +249,7 @@ main {
     <button class="active" data-page="inicio">Inicio</button>
     <button data-page="noticias">Noticias</button>
     <button data-page="mapa">Mapa</button>
-    <button data-page="vehiculos">Vehículos</button>
+    <button data-page="vehiculos">Coches</button>
     <button type="button" onclick="window.location.href='./guia.html'">Guías</button>
     <button data-page="perfil">Mi progreso</button>
     <button data-page="editor">Editorial</button>
@@ -328,9 +329,9 @@ main {
       <span class="tag">COLECCIÓN</span>
       <h3>Garaje virtual</h3>
       <p class="muted">
-        Consulta los vehículos registrados en la plataforma.
+        Busca coches de Leonida, consulta sus fichas y localiza los puntos documentados.
       </p>
-      <button data-go="vehiculos">Ver vehículos</button>
+      <button data-go="vehiculos">Ver coches</button>
     </div>
   </div>
 
@@ -391,31 +392,33 @@ main {
 
 </section>
 
-<!-- VEHÍCULOS -->
-<section class="section" id="vehiculos">
-
-  <h2>Garaje GTA 6</h2>
-
-  <p class="muted">
-    Vehículos verificados y registrados en nuestra base de datos.
-  </p>
-
-  <div class="tools">
-    <input
-      id="vehicleSearch"
-      placeholder="Buscar vehículo..."
-    >
-
-    <select id="vehicleFilter">
-      <option value="all">Todos los tipos</option>
-      <option value="Deportivo">Deportivo</option>
-      <option value="Moto">Moto</option>
-      <option value="Todoterreno">Todoterreno</option>
-    </select>
+<!-- COCHES -->
+<section class="section garage" id="vehiculos" aria-labelledby="garageTitle">
+  <div class="garage-intro">
+    <h2 id="garageTitle">Coches de GTA VI</h2>
+    <p>Explora el garaje de Leonida y consulta cómo conseguir cada coche cuando hay datos publicados.</p>
   </div>
 
-  <div class="grid" id="vehicleGrid"></div>
-
+  <div class="garage-filters">
+    <label for="vehicleSearch">Buscar coche
+      <input id="vehicleSearch" type="search" placeholder="Ej. Cheetah o Vapid">
+    </label>
+    <label for="vehicleFilter">Categoría
+      <select id="vehicleFilter"><option value="">Todas las categorías</option></select>
+    </label>
+    <label for="vehicleMake">Marca
+      <select id="vehicleMake"><option value="">Todas las marcas</option></select>
+    </label>
+  </div>
+  <p class="garage-results" id="vehicleStatus" role="status"></p>
+  <div class="garage-grid" id="vehicleGrid"></div>
+  <button type="button" class="garage-more" id="vehicleMore" hidden>Mostrar más coches</button>
+  <p class="garage-credit">Datos del mapa adaptados de
+    <a href="https://github.com/fbritoferreira/gta6">Open GTA 6 Map (fbritoferreira)</a>
+    bajo <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
+    Cada ficha enlaza a la fuente de su imagen.
+  </p>
+  <noscript>Activa JavaScript para consultar el catálogo.</noscript>
 </section>
 
 <!-- GUÍAS -->
@@ -622,6 +625,10 @@ document.querySelectorAll("[data-go]").forEach(button => {
   });
 });
 </script>
+
+<script src="./garaje-datos.js"></script>
+<script src="./garaje-catalogo.js"></script>
+<script src="./garaje.js"></script>
 
 <!-- Backend real de Supabase -->
 <script src="./backend.js"></script>

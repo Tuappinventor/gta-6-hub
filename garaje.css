@@ -1,0 +1,156 @@
+.garage-intro {
+  padding: clamp(24px, 5vw, 54px);
+  border: 1px solid #514062;
+  border-radius: 22px;
+  background: radial-gradient(ellipse at top right, #632759 0, transparent 66%), #161b31;
+}
+
+#vehiculos .garage-intro h2 {
+  margin: 0 0 10px;
+  font-size: clamp(32px, 6vw, 58px);
+  line-height: 1.05;
+}
+
+.garage-intro p {
+  margin: 0;
+  color: #e1d9ec;
+}
+
+.garage-filters,
+.garage-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.garage-filters {
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  margin-top: 22px;
+}
+
+.garage-filters label,
+.garage-editor label {
+  display: grid;
+  gap: 6px;
+}
+
+.garage-results {
+  color: #c6cde1;
+}
+
+.garage-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  align-items: start;
+}
+
+.garage-car {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #3a3e56;
+  border-radius: 16px;
+  background: #151a2d;
+}
+
+.garage-car figure {
+  position: relative;
+  margin: 0;
+}
+
+.garage-car img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #101526;
+}
+
+.garage-car figcaption {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  border-radius: 4px;
+  padding: 3px 6px;
+  background: #090c16e8;
+  color: #fff;
+  font-size: 11px;
+}
+
+.garage-body {
+  padding: 16px;
+  overflow-wrap: anywhere;
+}
+
+.garage-body h3 {
+  margin: 6px 0 10px;
+  line-height: 1.2;
+}
+
+.garage-body summary {
+  width: fit-content;
+  color: #ffafd3;
+  cursor: pointer;
+}
+
+.garage-body details p {
+  color: #d7dcef;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.garage-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: .9rem;
+}
+
+.garage-links a {
+  color: #ffafd3;
+  text-underline-offset: 3px;
+}
+
+.garage-editor {
+  margin-top: 24px;
+}
+
+.garage-editor form {
+  margin: 14px 0;
+}
+
+.garage-editor .garage-verified {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 650px) {
+  .garage-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .garage-filters label:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.garage-more {
+  display: block;
+  margin: 24px auto 0;
+}
+
+.garage-more[hidden] {
+  display: none;
+}
+
+.garage-grid + .garage-more,
+.garage-car summary {
+  scroll-margin-top: 160px;
+}
+
+.garage-credit {
+  margin: 24px 0 0;
+  color: #c6cde1;
+  font-size: .85rem;
+}
+
+.garage-credit a {
+  color: #ffafd3;
+}
