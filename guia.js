@@ -1,1 +1,110 @@
-(()=>{'use strict';const $=id=>document.getElementById(id),cats={ciudad:['Ciudad','🏙️'],region:['Región','🗺️'],isla:['Isla','🏝️'],aeropuerto:['Aeropuerto','✈️'],garaje:['Garaje','🚗'],casa:['Casa','🏠'],tienda:['Tienda','🛒'],vehiculo:['Vehículo','🚘'],secreto:['Secreto','💎'],mision:['Misión','🎯'],coleccionable:['Coleccionable','⭐'],arma:['Arma','🎯'],servicio:['Servicio','🏥'],otro:['Otro','📍']};let all=[];const mapUrl=id=>'./mapa-interactivo.html?location='+encodeURIComponent(id);function render(){const q=$('search').value.trim().toLocaleLowerCase('es'),cat=$('category').value,rows=all.filter(p=>(cat==='all'||p.category===cat)&&[p.name,p.description,p.category].join(' ').toLocaleLowerCase('es').includes(q));$('status').textContent=rows.length+' fichas verificadas'+(rows.length!==all.length?' de '+all.length:'');$('cards').replaceChildren();if(!rows.length){const e=document.createElement('div');e.className='empty';e.textContent=all.length?'No hay ubicaciones con esos filtros.':'Todavía no hay fichas verificadas publicadas.';$('cards').append(e);return}for(const p of rows){const card=document.createElement('article');card.className='card';const visual=document.createElement('div');visual.className='visual';const icon=cats[p.category]?.[1]||'📍';if(typeof p.image_url==='string'&&/^https:\/\//i.test(p.image_url)){const img=document.createElement('img');img.src=p.image_url;img.alt='Imagen de '+p.name;img.loading='lazy';img.onerror=()=>{visual.replaceChildren(document.createTextNode(icon))};visual.append(img)}else visual.textContent=icon;const body=document.createElement('div');body.className='card-body';const tag=document.createElement('div');tag.className='tag';tag.textContent=(cats[p.category]?.[0]||p.category)+' · Verificado';const title=document.createElement('h2');title.textContent=p.name;const desc=document.createElement('p');desc.textContent=p.description||'Ubicación publicada en el mapa de Leonida.';const actions=document.createElement('div');actions.className='actions';const a=document.createElement('a');a.href=mapUrl(p.id);a.textContent='📍 Ver en el mapa original';actions.append(a);body.append(tag,title,desc,actions);card.append(visual,body);$('cards').append(card)}}async function init(){const cfg=window.VICEHUB_CONFIG;if(!cfg?.url||!cfg?.anonKey||!window.supabase){$('status').textContent='No se ha podido cargar la conexión con Supabase.';return}const db=window.supabase.createClient(cfg.url,cfg.anonKey);const {data,error}=await db.from('vice_map_locations').select('id,name,category,description,image_url,verified').eq('verified',true).order('name').limit(3000);if(error){$('status').textContent='No se pudieron cargar las fichas: '+error.message;return}all=data||[];for(const c of [...new Set(all.map(x=>x.category))].sort()){const opt=document.createElement('option');opt.value=c;opt.textContent=cats[c]?.[0]||c;$('category').append(opt)}render()}$('search').addEventListener('input',render);$('category').addEventListener('change',render);init().catch(e=>$('status').textContent='Error al cargar: '+e.message)})();
+(() => {
+  'use strict';
+
+  const search = document.getElementById('guideSearch');
+  const category = document.getElementById('guideCategory');
+  const status = document.getElementById('guideLocationsStatus');
+  const grid = document.getElementById('guideLocations');
+  const categories = {
+    ciudad: ['Ciudad', '🏙️'],
+    region: ['Región', '🗺️'],
+    isla: ['Isla', '🏝️'],
+    aeropuerto: ['Aeropuerto', '✈️'],
+    garaje: ['Garaje', '🚗'],
+    casa: ['Casa', '🏠'],
+    tienda: ['Tienda', '🛒'],
+    vehiculo: ['Vehículo', '🚘'],
+    secreto: ['Secreto', '💎'],
+    mision: ['Misión', '🎯'],
+    coleccionable: ['Coleccionable', '⭐'],
+    arma: ['Arma', '🎯'],
+    servicio: ['Servicio', '🏥'],
+    otro: ['Otro', '📍']
+  };
+  let locations = [];
+
+  function card(location) {
+    const [label, icon] = categories[location.category] || [location.category || 'Lugar', '📍'];
+    const article = document.createElement('article');
+    article.className = 'card';
+
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = icon + ' ' + label + ' · Verificado';
+    if (/^https:\/\//i.test(location.image_url || '')) {
+      const image = document.createElement('img');
+      image.className = 'guide-cover';
+      image.src = location.image_url;
+      image.alt = 'Imagen de ' + location.name;
+      image.loading = 'lazy';
+      image.addEventListener('error', () => image.remove());
+      article.append(image);
+    }
+
+    const title = document.createElement('h3');
+    title.textContent = location.name;
+    const description = document.createElement('p');
+    description.textContent = location.description || 'Ubicación publicada en el mapa de Leonida.';
+    const mapLink = document.createElement('a');
+    mapLink.className = 'guide-link';
+    mapLink.href = './mapa-interactivo.html?location=' + encodeURIComponent(location.id);
+    mapLink.textContent = '📍 Ver en el mapa original';
+
+    article.append(tag, title, description, mapLink);
+    return article;
+  }
+
+  function render() {
+    const query = search.value.trim().toLocaleLowerCase('es');
+    const rows = locations.filter(location => {
+      const label = categories[location.category]?.[0];
+      const text = [location.name, location.description, location.category, label].join(' ');
+      return (category.value === 'all' || location.category === category.value)
+        && text.toLocaleLowerCase('es').includes(query);
+    });
+
+    if (!rows.length) {
+      grid.replaceChildren();
+      status.textContent = locations.length
+        ? 'No hay ubicaciones con esos filtros.'
+        : 'Todavía no hay fichas verificadas publicadas.';
+      return;
+    }
+
+    status.textContent = (rows.length === 1 ? '1 ficha verificada' : rows.length + ' fichas verificadas')
+      + (rows.length === locations.length ? '' : ' de ' + locations.length);
+    grid.replaceChildren(...rows.map(card));
+  }
+
+  async function load() {
+    const config = window.VICEHUB_CONFIG;
+    if (!config?.url || !config?.anonKey || !window.supabase) {
+      status.textContent = 'No se pudo conectar con Supabase.';
+      return;
+    }
+    const db = window.supabase.createClient(config.url, config.anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'vicehub-guide-locations' }
+    });
+    const { data, error } = await db.from('vice_map_locations')
+      .select('id,name,category,description,image_url')
+      .eq('verified', true)
+      .order('name')
+      .limit(3000);
+    if (error) throw error;
+
+    locations = data || [];
+    for (const key of [...new Set(locations.map(location => location.category))].sort()) {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = categories[key]?.[0] || key;
+      category.append(option);
+    }
+    search.addEventListener('input', render);
+    category.addEventListener('change', render);
+    render();
+  }
+
+  window.addEventListener('vicehub:guides-open', () => {
+    load().catch(() => { status.textContent = 'No se pudieron cargar las fichas. Recarga para volver a intentarlo.'; });
+  }, { once: true });
+})();

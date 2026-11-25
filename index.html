@@ -131,6 +131,19 @@ main {
 .section.active { display: block; }
 .section h2 { font-size: 28px; }
 
+#guias .grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); }
+#guias .card { min-width: 0; overflow-wrap: anywhere; }
+#guias .guide-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  margin-bottom: 12px;
+  border-radius: 12px;
+}
+#guias .guide-link { color: #ff9bc6; }
+#guias .guide-full { white-space: pre-line; }
+
 .tag {
   color: #ff88bf;
   font-size: 12px;
@@ -250,7 +263,7 @@ main {
     <button data-page="noticias">Noticias</button>
     <button data-page="mapa">Mapa</button>
     <button data-page="vehiculos">Coches</button>
-    <button type="button" onclick="window.location.href='./guia.html'">Guías</button>
+    <button type="button" data-page="guias">Guías</button>
     <button data-page="perfil">Mi progreso</button>
     <button data-page="editor">Editorial</button>
   </nav>
@@ -422,34 +435,29 @@ main {
 </section>
 
 <!-- GUÍAS -->
-<section class="section" id="guias">
-
-  <h2>Guías</h2>
-
-  <p class="muted">
-    Guías de GTA 6 preparadas por nuestro equipo editorial.
-  </p>
-
-  <div class="grid">
-    <div class="card">
-      <span class="tag">PRÓXIMAMENTE</span>
-      <h3>Primeros pasos</h3>
-      <p>Consejos para comenzar tu aventura.</p>
-    </div>
-
-    <div class="card">
-      <span class="tag">PRÓXIMAMENTE</span>
-      <h3>Exploración</h3>
-      <p>Localizaciones, secretos y coleccionables.</p>
-    </div>
-
-    <div class="card">
-      <span class="tag">PRÓXIMAMENTE</span>
-      <h3>Vehículos</h3>
-      <p>Guías y comparativas.</p>
-    </div>
+<section class="section" id="guias" aria-labelledby="guidesTitle">
+  <div class="garage-intro">
+    <h2 id="guidesTitle">Guías de GTA VI</h2>
+    <p>Consulta las guías de VICE HUB y las fichas verificadas de Leonida.</p>
+    <button type="button" data-go="mapa">Abrir mapa interactivo</button>
   </div>
 
+  <h3>Guías y tutoriales</h3>
+  <p id="guideArticlesStatus" class="muted" role="status">Cargando guías…</p>
+  <div id="guideArticles" class="grid"></div>
+
+  <h3>Fichas verificadas</h3>
+  <div class="garage-filters">
+    <label for="guideSearch">Buscar ficha
+      <input id="guideSearch" type="search" placeholder="Nombre, descripción o categoría">
+    </label>
+    <label for="guideCategory">Categoría
+      <select id="guideCategory"><option value="all">Todas las categorías</option></select>
+    </label>
+  </div>
+  <p id="guideLocationsStatus" class="muted" role="status">Cargando fichas…</p>
+  <div id="guideLocations" class="grid"></div>
+  <noscript>Activa JavaScript para consultar las guías y fichas.</noscript>
 </section>
 
 <!-- EDITORIAL -->
@@ -611,6 +619,12 @@ function page(id) {
     );
   });
 
+  if (id === 'guias' || location.hash === '#guias') {
+    const url = new URL(location.href);
+    url.hash = id === 'guias' ? 'guias' : '';
+    history.replaceState(history.state, '', url);
+  }
+  if (id === 'guias') window.dispatchEvent(new Event('vicehub:guides-open'));
   window.scrollTo(0, 0);
 }
 
@@ -642,6 +656,16 @@ document.querySelectorAll("[data-go]").forEach(button => {
 <script src="./automation-access.js?v=1"></script>
   <script src="./media-v34.js"></script>
   <script src="./map-zoom.js"></script>
+<script src="./share.js"></script>
+<script src="./guia.js"></script>
+<script src="./guias-automaticas.js"></script>
+<script>
+function openGuidesFromHash() {
+  if (location.hash === '#guias') page('guias');
+}
+window.addEventListener('hashchange', openGuidesFromHash);
+openGuidesFromHash();
+</script>
 
 </body>
 </html>

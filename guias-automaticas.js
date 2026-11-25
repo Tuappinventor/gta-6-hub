@@ -1,4 +1,89 @@
-/* VICE HUB AutoGuides + ViceShare */
-(()=>{'use strict';const section=document.createElement('section');section.id='autoGuides';section.style.margin='36px 0';const h=document.createElement('h2');h.textContent='Guías y tutoriales';const info=document.createElement('p');info.textContent='Cargando guías publicadas…';const grid=document.createElement('div');grid.className='cards';section.append(h,info,grid);const anchor=document.querySelector('.tools');if(anchor)anchor.parentElement.insertBefore(section,anchor);else document.querySelector('main')?.append(section);
-const ready=window.ViceShare?Promise.resolve():new Promise(resolve=>{const s=document.createElement('script');s.src='/share.js';s.onload=resolve;s.onerror=resolve;document.head.append(s)});
-async function load(){const cfg=window.VICEHUB_CONFIG;if(!cfg?.url||!cfg?.anonKey||!window.supabase){info.textContent='No se pudo conectar con Supabase';return}const db=window.supabase.createClient(cfg.url,cfg.anonKey);const {data,error}=await db.from('articles').select('id,slug,title,summary,body,source_url,source_name,published_at,image_url').eq('kind','guide').eq('status','published').order('published_at',{ascending:false}).limit(50);if(error){info.textContent='No se pudieron cargar las guías: '+error.message;return}await ready;info.textContent=`${data.length} guías publicadas`;grid.replaceChildren();for(const item of data){const card=document.createElement('article');card.className='card';if(/^https:\/\//i.test(item.image_url||'')){const visual=document.createElement('div');visual.className='visual';const img=document.createElement('img');img.src=item.image_url;img.alt=item.title;img.loading='lazy';img.onerror=()=>visual.remove();visual.append(img);card.append(visual)}const body=document.createElement('div');body.className='card-body';const tag=document.createElement('div');tag.className='tag';tag.textContent='GUÍA · '+new Date(item.published_at).toLocaleDateString('es-ES');const title=document.createElement('h2');title.textContent=item.title||'';const desc=document.createElement('p');desc.textContent=item.summary||'';const btn=document.createElement('button');btn.type='button';btn.textContent='Leer guía';btn.onclick=()=>{if(/^[a-z0-9-]+$/.test(item.slug||'')){location.assign('/articulo/'+encodeURIComponent(item.slug));return}const existing=card.querySelector('.guide-full');if(existing){existing.remove();btn.textContent='Leer guía';return}const full=document.createElement('div');full.className='guide-full';full.style.whiteSpace='pre-line';full.style.lineHeight='1.65';full.textContent=item.body||'';if(/^https?:\/\//i.test(item.source_url||'')){const link=document.createElement('a');link.href=item.source_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Consultar fuente';full.append(document.createElement('hr'),link)}body.append(full);btn.textContent='Cerrar guía'};body.append(tag,title,desc,btn);if(/^[a-z0-9-]+$/.test(item.slug||''))window.ViceShare?.mount(body,{title:item.title,url:new URL('/articulo/'+encodeURIComponent(item.slug),location.origin).href});card.append(body);grid.append(card)}}load().catch(e=>info.textContent='Error al cargar guías: '+e.message)})();
+/* Guías publicadas por VICE HUB. */
+(() => {
+  'use strict';
+
+  const status = document.getElementById('guideArticlesStatus');
+  const grid = document.getElementById('guideArticles');
+
+  function card(item) {
+    const article = document.createElement('article');
+    article.className = 'card';
+
+    if (/^https:\/\//i.test(item.image_url || '')) {
+      const image = document.createElement('img');
+      image.className = 'guide-cover';
+      image.src = item.image_url;
+      image.alt = item.title;
+      image.loading = 'lazy';
+      image.addEventListener('error', () => image.remove());
+      article.append(image);
+    }
+
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = item.published_at
+      ? 'Guía · ' + new Date(item.published_at).toLocaleDateString('es-ES')
+      : 'Guía';
+    const title = document.createElement('h3');
+    title.textContent = item.title;
+    const summary = document.createElement('p');
+    summary.textContent = item.summary || '';
+    article.append(tag, title, summary);
+
+    if (/^[a-z0-9-]+$/.test(item.slug || '')) {
+      const link = document.createElement('a');
+      link.className = 'guide-link';
+      link.href = '/articulo/' + encodeURIComponent(item.slug);
+      link.textContent = 'Leer guía';
+      article.append(link);
+      window.ViceShare?.mount(article, { title: item.title, url: link.href });
+    } else {
+      const details = document.createElement('details');
+      const trigger = document.createElement('summary');
+      trigger.textContent = 'Leer guía';
+      const body = document.createElement('p');
+      body.className = 'guide-full';
+      body.textContent = item.body || '';
+      details.append(trigger, body);
+      if (/^https?:\/\//i.test(item.source_url || '')) {
+        const source = document.createElement('a');
+        source.className = 'guide-link';
+        source.href = item.source_url;
+        source.target = '_blank';
+        source.rel = 'noopener noreferrer';
+        source.textContent = 'Consultar fuente';
+        details.append(source);
+      }
+      article.append(details);
+    }
+
+    return article;
+  }
+
+  async function load() {
+    const config = window.VICEHUB_CONFIG;
+    if (!config?.url || !config?.anonKey || !window.supabase) {
+      status.textContent = 'No se pudo conectar con Supabase.';
+      return;
+    }
+    const db = window.supabase.createClient(config.url, config.anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'vicehub-guide-articles' }
+    });
+    const { data, error } = await db.from('articles')
+      .select('slug,title,summary,body,source_url,published_at,image_url')
+      .eq('kind', 'guide')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+
+    const guides = data || [];
+    status.textContent = guides.length === 1 ? '1 guía publicada'
+      : guides.length ? guides.length + ' guías publicadas' : 'Todavía no hay guías publicadas.';
+    grid.replaceChildren(...guides.map(card));
+  }
+
+  window.addEventListener('vicehub:guides-open', () => {
+    load().catch(() => { status.textContent = 'No se pudieron cargar las guías. Recarga para volver a intentarlo.'; });
+  }, { once: true });
+})();
