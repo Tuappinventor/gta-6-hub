@@ -122,6 +122,7 @@ async function main() {
       count: 'exact',
       head: true
     })
+    .eq('kind', 'news')
     .eq('status', 'published')
     .not('source_url', 'is', null)
     .gte(
@@ -600,6 +601,7 @@ de verificación.
     } = await db
       .from('articles')
       .select('id')
+      .eq('kind', 'news')
       .eq('source_url', item.url)
       .limit(1);
 
@@ -628,6 +630,7 @@ de verificación.
       } = await db
         .from('articles')
         .select('id')
+        .eq('kind', 'news')
         .eq('source_url', sourceUrl)
         .limit(1);
 
