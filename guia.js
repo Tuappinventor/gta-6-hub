@@ -1,6 +1,7 @@
 (() => {
   'use strict';
 
+  const panel = document.getElementById('guideMapLocations');
   const search = document.getElementById('guideSearch');
   const category = document.getElementById('guideCategory');
   const status = document.getElementById('guideLocationsStatus');
@@ -67,11 +68,11 @@
       grid.replaceChildren();
       status.textContent = locations.length
         ? 'No hay ubicaciones con esos filtros.'
-        : 'Todavía no hay fichas verificadas publicadas.';
+        : 'Todavía no hay ubicaciones verificadas publicadas.';
       return;
     }
 
-    status.textContent = (rows.length === 1 ? '1 ficha verificada' : rows.length + ' fichas verificadas')
+    status.textContent = (rows.length === 1 ? '1 ubicación verificada' : rows.length + ' ubicaciones verificadas')
       + (rows.length === locations.length ? '' : ' de ' + locations.length);
     grid.replaceChildren(...rows.map(card));
   }
@@ -104,7 +105,9 @@
     render();
   }
 
-  window.addEventListener('vicehub:guides-open', () => {
-    load().catch(() => { status.textContent = 'No se pudieron cargar las fichas. Recarga para volver a intentarlo.'; });
-  }, { once: true });
+  panel.addEventListener('toggle', function openLocations() {
+    if (!panel.open) return;
+    panel.removeEventListener('toggle', openLocations);
+    load().catch(() => { status.textContent = 'No se pudieron cargar las ubicaciones. Recarga para volver a intentarlo.'; });
+  });
 })();

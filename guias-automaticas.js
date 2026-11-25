@@ -7,7 +7,9 @@
 
   function card(item) {
     const article = document.createElement('article');
-    article.className = 'card';
+    article.className = 'guide-article';
+    const content = document.createElement('div');
+    content.className = 'guide-content';
 
     if (/^https:\/\//i.test(item.image_url || '')) {
       const image = document.createElement('img');
@@ -15,28 +17,38 @@
       image.src = item.image_url;
       image.alt = item.title;
       image.loading = 'lazy';
-      image.addEventListener('error', () => image.remove());
+      article.classList.add('has-cover');
+      image.addEventListener('error', () => {
+        image.remove();
+        article.classList.remove('has-cover');
+      });
       article.append(image);
     }
 
-    const tag = document.createElement('span');
-    tag.className = 'tag';
-    tag.textContent = item.published_at
-      ? 'Guía · ' + new Date(item.published_at).toLocaleDateString('es-ES')
-      : 'Guía';
+    if (item.published_at) {
+      const published = new Date(item.published_at);
+      const date = document.createElement('time');
+      date.className = 'guide-meta';
+      date.dateTime = item.published_at;
+      date.textContent = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' }).format(published);
+      content.append(date);
+    }
     const title = document.createElement('h3');
     title.textContent = item.title;
-    const summary = document.createElement('p');
-    summary.textContent = item.summary || '';
-    article.append(tag, title, summary);
+    content.append(title);
+    if (item.summary) {
+      const summary = document.createElement('p');
+      summary.className = 'muted';
+      summary.textContent = item.summary;
+      content.append(summary);
+    }
 
     if (/^[a-z0-9-]+$/.test(item.slug || '')) {
       const link = document.createElement('a');
-      link.className = 'guide-link';
+      link.className = 'guide-read';
       link.href = '/articulo/' + encodeURIComponent(item.slug);
       link.textContent = 'Leer guía';
-      article.append(link);
-      window.ViceShare?.mount(article, { title: item.title, url: link.href });
+      content.append(link);
     } else {
       const details = document.createElement('details');
       const trigger = document.createElement('summary');
@@ -54,9 +66,10 @@
         source.textContent = 'Consultar fuente';
         details.append(source);
       }
-      article.append(details);
+      content.append(details);
     }
 
+    article.append(content);
     return article;
   }
 
@@ -78,8 +91,7 @@
     if (error) throw error;
 
     const guides = data || [];
-    status.textContent = guides.length === 1 ? '1 guía publicada'
-      : guides.length ? guides.length + ' guías publicadas' : 'Todavía no hay guías publicadas.';
+    status.textContent = guides.length ? '' : 'Todavía no hay guías publicadas.';
     grid.replaceChildren(...guides.map(card));
   }
 

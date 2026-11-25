@@ -131,18 +131,68 @@ main {
 .section.active { display: block; }
 .section h2 { font-size: 28px; }
 
-#guias .grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); }
+#guias .guide-hero {
+  padding: clamp(22px, 5vw, 46px);
+  border: 1px solid #423956;
+  border-radius: 22px;
+  background: radial-gradient(ellipse at top right, #542450, transparent 70%), #141a2d;
+}
+#guias .guide-hero h2 {
+  margin: 0 0 8px;
+  font-size: clamp(30px, 6vw, 48px);
+  letter-spacing: -.035em;
+}
+#guias .guide-hero p { margin: 0; }
+#guias .grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 275px), 1fr)); }
 #guias .card { min-width: 0; overflow-wrap: anywhere; }
+#guias .guide-article {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #30364f;
+  border-radius: 18px;
+  background: #111729;
+}
+#guias .guide-article:not(.has-cover) { border-top: 3px solid #db5c9f; }
+#guias .guide-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 20px;
+  overflow-wrap: anywhere;
+}
+#guias .guide-content h3, #guias .guide-content p { margin: 0; }
+#guias .guide-content h3 { font-size: 21px; line-height: 1.25; }
+#guias .guide-meta { color: #c7a0c0; font-size: .83rem; }
 #guias .guide-cover {
   display: block;
   width: 100%;
   aspect-ratio: 3 / 2;
   object-fit: cover;
-  margin-bottom: 12px;
-  border-radius: 12px;
 }
-#guias .guide-link { color: #ff9bc6; }
+#guias .card .guide-cover { margin-bottom: 12px; border-radius: 12px; }
+#guias .guide-link { color: #ffb0d2; }
+#guias .guide-read {
+  margin-top: auto;
+  padding: 9px 14px;
+  border: 1px solid #824264;
+  border-radius: 10px;
+  color: #fff3f9;
+  background: #3f2340;
+  text-decoration: none;
+  font-weight: 700;
+}
+#guias .guide-read:hover { background: #683052; }
 #guias .guide-full { white-space: pre-line; }
+#guias .guide-map { margin-top: 28px; padding: 16px 20px; }
+#guias .guide-map summary { cursor: pointer; font-weight: 700; }
+#guias .guide-map .garage-filters { margin-top: 18px; }
+#guias .guide-map button { margin-top: 8px; }
+#guias #guideArticlesStatus:empty { display: none; }
 
 .tag {
   color: #ff88bf;
@@ -308,7 +358,7 @@ main {
 
     <div class="stat">
       <strong id="spins">—</strong>
-      <span class="muted">Fichas verificadas en Guías</span>
+      <span class="muted">Ubicaciones del mapa original</span>
     </div>
 
     <div class="stat">
@@ -436,28 +486,30 @@ main {
 
 <!-- GUÍAS -->
 <section class="section" id="guias" aria-labelledby="guidesTitle">
-  <div class="garage-intro">
+  <div class="guide-hero">
     <h2 id="guidesTitle">Guías de GTA VI</h2>
-    <p>Consulta las guías de VICE HUB y las fichas verificadas de Leonida.</p>
-    <button type="button" data-go="mapa">Abrir mapa interactivo</button>
+    <p class="muted">Trucos con el mando, códigos y consejos para explorar Leonida.</p>
   </div>
 
-  <h3>Guías y tutoriales</h3>
   <p id="guideArticlesStatus" class="muted" role="status">Cargando guías…</p>
   <div id="guideArticles" class="grid"></div>
 
-  <h3>Fichas verificadas</h3>
-  <div class="garage-filters">
-    <label for="guideSearch">Buscar ficha
-      <input id="guideSearch" type="search" placeholder="Nombre, descripción o categoría">
-    </label>
-    <label for="guideCategory">Categoría
-      <select id="guideCategory"><option value="all">Todas las categorías</option></select>
-    </label>
-  </div>
-  <p id="guideLocationsStatus" class="muted" role="status">Cargando fichas…</p>
-  <div id="guideLocations" class="grid"></div>
-  <noscript>Activa JavaScript para consultar las guías y fichas.</noscript>
+  <details id="guideMapLocations" class="panel guide-map">
+    <summary>Ubicaciones del mapa original</summary>
+    <p class="muted">Cada ubicación es un punto guardado en una versión anterior del mapa de VICE HUB. Ábrela para ver su marcador.</p>
+    <button type="button" data-go="mapa">Abrir el mapa actual</button>
+    <div class="garage-filters">
+      <label for="guideSearch">Buscar ubicación
+        <input id="guideSearch" type="search" placeholder="Nombre, descripción o categoría">
+      </label>
+      <label for="guideCategory">Categoría
+        <select id="guideCategory"><option value="all">Todas las categorías</option></select>
+      </label>
+    </div>
+    <p id="guideLocationsStatus" class="muted" role="status">Cargando ubicaciones…</p>
+    <div id="guideLocations" class="grid"></div>
+  </details>
+  <noscript>Activa JavaScript para consultar las guías y ubicaciones.</noscript>
 </section>
 
 <!-- EDITORIAL -->
@@ -656,7 +708,6 @@ document.querySelectorAll("[data-go]").forEach(button => {
 <script src="./automation-access.js?v=1"></script>
   <script src="./media-v34.js"></script>
   <script src="./map-zoom.js"></script>
-<script src="./share.js"></script>
 <script src="./guia.js"></script>
 <script src="./guias-automaticas.js"></script>
 <script>
