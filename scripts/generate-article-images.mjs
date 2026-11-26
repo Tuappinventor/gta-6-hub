@@ -4,8 +4,14 @@ import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'node:crypto';
 import { startAutomation } from './automation-logger.mjs';
 
-// VICE HUB AutoImages 3.6
-// Generación de imágenes y seguimiento de actividad.
+const bucket = 'article-images';
+const credit = 'Ilustración generada con IA · OpenAI';
+const missingImage = 'image_url.is.null,image_url.eq.';
+const pageSize = 25;
+// Reserva tiempo para acabar la última imagen y guardar el resumen antes
+// del límite de 15 minutos de GitHub Actions.
+const processingWindowMs = 10 * 60_000;
+const imageTimeoutMs = 3 * 60_000;
 
 const model =
   process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
@@ -16,6 +22,7 @@ const logger = await startAutomation(
 );
 
 async function main() {
+  const deadline = Date.now() + processingWindowMs;
 
   for (const name of [
     'OPENAI_API_KEY',
@@ -29,7 +36,8 @@ async function main() {
 
   const ai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    maxRetries: 0
+    maxRetries: 0,
+    timeout: imageTimeoutMs
   });
 
   const db = createClient(
@@ -43,156 +51,119 @@ async function main() {
     }
   );
 
-  const bucket = 'article-images';
-
-  const credit =
-    'Ilustración generada con IA · OpenAI';
-
-  const maxPerDay = 3;
-
-  const start = new Date();
-
-  start.setUTCHours(0, 0, 0, 0);
-
-  const missingImage =
-    'image_url.is.null,image_url.eq.';
-
-  console.log('VICE HUB AutoImages 3.6');
-
-  // ========================================
-  // CONTROL DIARIO
-  // ========================================
-
-  const {
-    count,
-    error: countError
-  } = await db
-    .from('articles')
-    .select('id', {
-      count: 'exact',
-      head: true
-    })
-    .eq('image_credit', credit)
-    .gte(
-      'image_generated_at',
-      start.toISOString()
-    );
-
-  if (countError) throw countError;
-
-  const generatedToday = count || 0;
-
+  // Noticias y guías publicadas comparten la tabla articles.
+  const pending = await countPending(db);
+  logger.setPendingImages(pending);
   logger.setMetadata({
-    daily_limit: maxPerDay,
-    linked_today_before: generatedToday,
-    remaining_today: Math.max(
-      0,
-      maxPerDay - generatedToday
-    ),
+    pending_images_before: pending,
     image_size: '1536x1024',
     image_quality: 'low'
   });
 
-  console.log(
-    `Imágenes vinculadas hoy: ${generatedToday}`
-  );
-
-  console.log(
-    `Disponibles hoy: ${
-      Math.max(0, maxPerDay - generatedToday)
-    }`
-  );
-
-  // ========================================
-  // PUBLICACIONES PENDIENTES
-  // ========================================
-
-  const {
-    count: pending,
-    error: pendingError
-  } = await db
-    .from('articles')
-    .select('id', {
-      count: 'exact',
-      head: true
-    })
-    .eq('status', 'published')
-    .or(missingImage);
-
-  if (pendingError) throw pendingError;
-
-  logger.setPendingImages(pending || 0);
-
-  console.log(
-    `Publicaciones sin imagen: ${pending || 0}`
-  );
+  console.log(`Publicaciones sin imagen al inicio: ${pending}`);
+  if (!pending) {
+    await logger.skip('Todas las publicaciones tienen imagen.');
+    return;
+  }
 
   await logger.checkpoint();
 
-  if (!pending) {
+  let cursor;
+  let linked = 0;
+  let failures = 0;
+  let paused = false;
 
-    await logger.skip(
-      'Todas las publicaciones tienen imagen.'
-    );
+  try {
+    while (!paused) {
+      const query = db
+        .from('articles')
+        .select('id,title,summary,kind,category,verification_level')
+        .eq('status', 'published')
+        .or(missingImage)
+        .order('id')
+        .limit(pageSize);
 
-    return;
+      // La paginación por ID sigue funcionando mientras salen filas de la cola.
+      if (cursor) query.gt('id', cursor);
+
+      const { data: articles, error } = await query;
+      if (error) throw error;
+      if (!articles?.length) break;
+
+      for (const article of articles) {
+        if (Date.now() >= deadline) {
+          paused = true;
+          break;
+        }
+
+        cursor = article.id;
+        try {
+          if (await linkImage(db, ai, article)) {
+            linked++;
+            logger.increment('images_linked');
+            logger.setPendingImages(Math.max(0, pending - linked));
+            await logger.checkpoint();
+          }
+        } catch (error) {
+          failures++;
+          logger.setMetadata({
+            failed_articles: failures,
+            last_failed_article_id: article.id
+          });
+          console.error(`No se pudo completar la imagen de ${article.id}.`);
+
+          // Un problema de acceso o cuota de OpenAI afecta a toda la cola.
+          if (error instanceof OpenAI.APIError && [401, 403, 429].includes(error.status)) {
+            throw error;
+          }
+        }
+      }
+    }
+  } finally {
+    try {
+      const remaining = await countPending(db);
+      logger.setPendingImages(remaining);
+      logger.setMetadata({ pending_count_estimated: false, paused_for_time: paused });
+      console.log(`Portadas vinculadas: ${linked}. Pendientes: ${remaining}.`);
+    } catch (error) {
+      logger.setMetadata({ pending_count_estimated: true });
+      console.warn('No se pudo actualizar el recuento de publicaciones pendientes.');
+    }
   }
 
-  if (generatedToday >= maxPerDay) {
-
-    await logger.skip(
-      'Límite diario de imágenes alcanzado.'
-    );
-
-    return;
+  if (failures) {
+    throw new Error(`Fallaron ${failures} portadas durante la ejecución. Si siguen pendientes, se reintentarán en la siguiente.`);
   }
 
-  // ========================================
-  // SELECCIONAR PUBLICACIÓN
-  // ========================================
+  await logger.success(
+    paused
+      ? `${linked} portadas vinculadas. La cola se retomará en la siguiente ejecución.`
+      : `${linked} portadas vinculadas tras revisar las publicaciones pendientes.`
+  );
+}
 
-  const {
-    data: articles,
-    error: listError
-  } = await db
+async function countPending(db) {
+  const { count, error } = await db
     .from('articles')
-    .select(`
-      id,
-      title,
-      summary,
-      kind,
-      category,
-      categories,
-      verification_level,
-      published_at,
-      image_url
-    `)
+    .select('id', { count: 'exact', head: true })
     .eq('status', 'published')
-    .or(missingImage)
-    .order('published_at', {
-      ascending: false,
-      nullsFirst: false
-    })
-    .limit(1);
+    .or(missingImage);
 
-  if (listError) throw listError;
+  if (error) throw error;
+  return count ?? 0;
+}
 
-  const article = articles?.[0];
-
-  if (!article) {
-
-    await logger.skip(
-      'No hay publicaciones pendientes.'
-    );
-
-    return;
-  }
-
+async function linkImage(db, ai, article) {
   logger.setMetadata({
     article_id: article.id,
     article_title: article.title,
     article_kind: article.kind,
-    article_category: article.category
+    article_category: article.category,
+    image_usage: null,
+    usage_available: null,
+    image_bytes: null,
+    image_url: null,
+    storage_available: false
   });
 
   console.log(
@@ -553,99 +524,14 @@ Requirements:
 
   if (updateError) throw updateError;
 
-  const linked = updated?.length || 0;
-
-  logger.set(
-    'images_linked',
-    linked
-  );
-
-  logger.setMetadata({
-    linked_today_after:
-      generatedToday + linked,
-    image_url: publicUrl.publicUrl
-  });
-
-  await logger.checkpoint();
-
-  // ========================================
-  // ACTUALIZAR PENDIENTES
-  // ========================================
-
-  const {
-    count: pendingAfter,
-    error: recountError
-  } = await db
-    .from('articles')
-    .select('id', {
-      count: 'exact',
-      head: true
-    })
-    .eq('status', 'published')
-    .or(missingImage);
-
-  if (recountError) {
-
-    logger.setPendingImages(
-      Math.max(
-        0,
-        (pending || 0) - linked
-      )
-    );
-
-    logger.setMetadata({
-      pending_count_estimated: true
-    });
-
-  } else {
-
-    logger.setPendingImages(
-      pendingAfter || 0
-    );
-
-    logger.setMetadata({
-      pending_count_estimated: false
-    });
+  if (updated?.length) {
+    logger.setMetadata({ image_url: publicUrl.publicUrl });
+    console.log(`Imagen vinculada: ${publicUrl.publicUrl}`);
+    return true;
   }
 
-  // ========================================
-  // FINALIZAR
-  // ========================================
-
-  if (linked) {
-
-    console.log(
-      `Imagen vinculada: ${publicUrl.publicUrl}`
-    );
-
-    await logger.success(
-      alreadyExists
-        ? 'Imagen reutilizada y vinculada.'
-        : 'Imagen generada y vinculada.'
-    );
-
-  } else {
-
-    console.log(
-      'Publicación modificada por otro proceso.'
-    );
-
-    await logger.skip(
-      'No se ha sustituido ninguna imagen.'
-    );
-  }
-
-  console.log(
-    '\n--- RESUMEN AUTOIMAGES ---'
-  );
-
-  console.log(
-    JSON.stringify(
-      logger.getCounters(),
-      null,
-      2
-    )
-  );
+  console.log('La publicación ya no está pendiente.');
+  return false;
 }
 
 // ==========================================
