@@ -13,7 +13,7 @@ export default async function handler(req,res) {
  const endpoint=`${base.replace(/\/$/,'')}/rest/v1/articles?slug=eq.${encodeURIComponent(slug)}&status=eq.published&select=title,summary,body,slug,kind,published_at,source_url,source_name,verification_level,category,image_url,image_credit&limit=1`;
  const response=await fetch(endpoint,{headers:{apikey:key,Authorization:`Bearer ${key}`}});if(!response.ok)throw Error('Supabase unavailable');
  const [a]=await response.json();if(!a)return res.status(404).send('Artículo no encontrado');
- const canonical=`https://gta-6-hub-eta.vercel.app/articulo/${encodeURIComponent(a.slug)}`;
+ const canonical=`https://vicehubgta6.com/articulo/${encodeURIComponent(a.slug)}`;
  const image=urlSafe(a.image_url),source=urlSafe(a.source_url),headline=publicHeadline(a),title=escapeHtml(headline),description=escapeHtml(a.summary||'Noticias sobre GTA VI en VICE HUB');
  const blocks=String(a.body||'').split(/\n\s*\n/).filter(Boolean);
  const sourceHeading='Fuentes consultadas\n';
