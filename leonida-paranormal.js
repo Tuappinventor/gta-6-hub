@@ -78,3 +78,71 @@ export const alienLaboratory = {
   paranormal: true,
   sourceUrl: 'https://www.videogameschronicle.com/guide/gta-6-full-alien-ufo-questline-walkthrough/',
 };
+
+export const paranormalEnglish = {
+  'random-event-016': {
+    name: 'UFO · Suspicious car',
+    description: 'Check the car stopped on the road. This spawn has been reported by the community.',
+  },
+  'random-event-029': {
+    name: 'Alien witness',
+    description: 'Talk to the witness who claims to have seen an alien in this area.',
+  },
+  'random-event-063': {
+    name: 'UFO abduction near Starlet Motel',
+    description: 'From Chapter 2, visit the area at night, preferably after 02:00 and alone. If you see a car with open doors and flashing lights, follow the trail into the woods. This is a random encounter.',
+  },
+  'random-event-067': {
+    name: 'UFO believer',
+    description: 'Look for the man standing on the bonnet of his pickup. Community reports suggest he can appear after the nearby abduction encounter.',
+  },
+  'random-event-092': {
+    name: 'La Llorona · Roadside ghost',
+    description: 'Reported sighting area in Lummox County. Drive alone between 01:00 and 04:00. This random encounter may also occur on other roads.',
+  },
+  'random-event-093': {
+    name: 'Ghosts and ghost ship at St. Lucia Lighthouse',
+    description: 'Look toward the top of the lighthouse at night. To follow the ghost ship story, read the diary in the nearby house and take a boat east of Little Hardin Island around 01:30.',
+  },
+  'random-event-148': {
+    name: 'Alien enthusiast',
+    description: 'A man is waiting to see something unusual. Walk over and talk to him.',
+  },
+  'random-event-157': {
+    name: 'Rockledge Road ghost',
+    description: 'Drive along Rockledge Road at night. According to the community map, a figure may cross the road.',
+  },
+  'random-event-178': {
+    name: 'Bud the alien hunter',
+    description: 'Look for Bud on top of his car around 19:00. He is trying to lure aliens so he can photograph them.',
+  },
+  'random-event-215': {
+    name: 'Rockledge Road ghost · Inside the car',
+    description: 'A night-time sighting reported by the community. The figure may rise from the back seat when you get in the car.',
+  },
+  'random-event-229': {
+    name: 'UFO · Van abduction',
+    description: 'Random encounter in Ambrosia. A van is suspended beneath a UFO and drops after a flash.',
+  },
+  'random-event-248': {
+    name: 'Alien conspiracy theorist',
+    description: 'A man standing on a truck shouts about aliens and Area 69.',
+  },
+  'random-event-261': {
+    name: 'La Llorona · Car sighting',
+    description: 'Another location reported by the community. At night, the lights may flicker before a figure approaches your car.',
+  },
+  'easter-egg-010': {
+    name: 'Haunted Marbelle Hotel',
+    description: 'In southern Crosstown, near the Nine1Nine nightclub. Enter through the back door and go upstairs to see the Silent Hill-inspired fog scene.',
+  },
+  'random-event-272': {
+    name: 'Haunted bridge',
+    description: 'The community map reports fog and the sound of a woman crying shortly after midnight.',
+  },
+  'vicehub-laboratorio-alienigena': {
+    name: 'South Point Airfield alien laboratory',
+    area: 'Pelican Valley · South of Hamlet',
+    description: 'Approximate location of the fenced compound. After the abduction, sleep as the same character until you dream about the UFO. Use the clue from the dream to open the laboratory and rescue the alien.',
+  },
+};

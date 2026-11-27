@@ -289,9 +289,11 @@ summary{
 }
 </style>
 <script defer src="/web-analytics.js"></script>
+<link rel="stylesheet" href="/idiomas.css">
+<script src="/idiomas.js"></script>
 </head>
 
-<body>
+<body class="vice-map">
 
 <header>
  <div class="brand">
@@ -308,7 +310,7 @@ summary{
 <section id="panel" hidden>
  <div class="panel-header">
   <h2 id="panelTitle"></h2>
-  <button id="closePanel">✕</button>
+  <button id="closePanel" aria-label="Cerrar">✕</button>
  </div>
  <div id="panelContent"></div>
 </section>
@@ -336,6 +338,8 @@ summary{
 
 <script>
 'use strict';
+
+const { language, t, choose, translationButton } = window.ViceLanguage;
 
 const BASE =
  'https://fbritoferreira.github.io/gta6';
@@ -450,10 +454,14 @@ let found=new Set(read(':found',[]));
 let hideFound=!!read(':hideFound',false);
 let currentPanel='';
 let query='';
-const paranormalSearch = 'Ovnis y fantasmas';
+const paranormalSearch = t('Ovnis y fantasmas');
 let loaded=false;
 
 const markerIndex=new Map();
+let openMarkerId = '';
+document.addEventListener('vice-language-change', event => {
+ if (openMarkerId) event.detail.searchParams.set('id', openMarkerId);
+});
 
 function setStyle(value){
 
@@ -523,18 +531,22 @@ function category(p){
 }
 
 function categoryLabel(p){
- return translations[p.kind]||
- category(p).name;
+ return choose(translations[p.kind] || category(p).name, category(p).name);
+}
+
+function pointLabel(p){
+ return (language === 'en' && p.english?.name) || p.name || categoryLabel(p);
 }
 
 function matches(p){
 
- if (normalize(query) === normalize(paranormalSearch)) return p.paranormal === true;
+ if (['Ovnis y fantasmas', 'UFOs and ghosts'].map(normalize).includes(normalize(query))) return p.paranormal === true;
 
  const text=normalize([
   p.name,p.originalName,p.type,p.kind,
   p.district,p.area,
-  p.description,categoryLabel(p)
+  p.description,p.english?.name,p.english?.description,categoryLabel(p),
+  translations[p.kind],category(p).name
  ].join(' '));
 
  return normalize(query)
@@ -571,26 +583,34 @@ function popup(p){
  const content=document.createElement('div');
 
  const title=document.createElement('strong');
- title.textContent=p.name||categoryLabel(p);
+ title.textContent=pointLabel(p);
  content.append(title);
 
  const info=document.createElement('p');
 
- info.textContent=[
-  categoryLabel(p),
-  p.district||p.area,
-  p.description
+ info.textContent = [
+  categoryLabel(p), (language === 'en' && p.english?.area) || p.district || p.area
  ].filter(Boolean).join(' · ');
-
  content.append(info);
+
+ const description = (language === 'en' && p.english?.description) || p.description;
+ const descriptionLanguage = p.english && language === 'es' ? 'es' : 'en';
+ if (description) {
+  const text = document.createElement('p');
+  text.textContent = description;
+  text.lang = descriptionLanguage;
+  text.dataset.original = '';
+  content.append(text);
+  if (descriptionLanguage !== language) content.append(translationButton([text], descriptionLanguage));
+ }
 
  if(category(p).pinnable){
 
   const button=document.createElement('button');
 
-  button.textContent=found.has(p.id)
+  button.textContent=t(found.has(p.id)
    ?'✓ Encontrado · Desmarcar'
-   :'Marcar como encontrado';
+   :'Marcar como encontrado');
 
   button.onclick=()=>{
 
@@ -612,9 +632,9 @@ function popup(p){
     map.closePopup();
     renderMarkers();
    }else{
-    button.textContent=found.has(p.id)
+    button.textContent=t(found.has(p.id)
      ?'✓ Encontrado · Desmarcar'
-     :'Marcar como encontrado';
+     :'Marcar como encontrado');
    }
 
    if(currentPanel==='progress'){
@@ -635,7 +655,7 @@ function popup(p){
   related.href = guideSlug
    ? '/articulo/' + encodeURIComponent(guideSlug)
    : './index.html?' + new URLSearchParams({ coche: car.name }) + '#vehiculos';
-  related.textContent = guideSlug ? 'Leer guía de cajas fuertes' : 'Ver ficha del coche';
+  related.textContent = t(guideSlug ? 'Leer guía de cajas fuertes' : 'Ver ficha del coche');
   content.append(document.createElement('br'), related);
  }
 
@@ -644,7 +664,7 @@ function popup(p){
  link.href=p.sourceUrl || BASE+'/?id='+encodeURIComponent(p.id);
  link.target='_blank';
  link.rel='noopener';
- link.textContent='Consultar fuente original';
+ link.textContent=t('Consultar fuente original');
 
  content.append(document.createElement('br'),link);
 
@@ -670,11 +690,13 @@ function renderMarkers(){
    [-p.y,p.x],
    {
     icon:makeIcon(p),
-    title:p.name||categoryLabel(p)
+    title:pointLabel(p)
    }
   );
 
   marker.bindPopup(()=>popup(p));
+  marker.on('popupopen', () => { openMarkerId = p.id; });
+  marker.on('popupclose', () => { if (openMarkerId === p.id) openMarkerId = ''; });
 
   markerIndex.set(p.id,marker);
   markers.push(marker);
@@ -683,7 +705,7 @@ function renderMarkers(){
  cluster.addLayers(markers);
 
  $('status').textContent=
-  `${markers.length.toLocaleString('es-ES')} de ${locations.length.toLocaleString('es-ES')} ubicaciones`;
+  `${markers.length.toLocaleString(language)} ${choose('de', 'of')} ${locations.length.toLocaleString(language)} ${choose('ubicaciones', 'locations')}`;
 }
 
 function openLocation(p){
@@ -713,7 +735,7 @@ function openLocation(p){
 function makeButton(text,action){
 
  const button=document.createElement('button');
- button.textContent=text;
+ button.textContent=t(text);
  button.onclick=action;
  return button;
 }
@@ -722,7 +744,7 @@ function paragraph(text){
 
  const p=document.createElement('p');
  p.className='muted';
- p.textContent=text;
+ p.textContent=t(text);
  return p;
 }
 
@@ -751,7 +773,7 @@ function renderPanel(type){
   progress:'Mi progreso'
  };
 
- $('panelTitle').textContent=titles[type];
+ $('panelTitle').textContent=t(titles[type]);
 
  document.querySelectorAll('[data-panel]')
  .forEach(b=>{
@@ -764,7 +786,7 @@ function renderPanel(type){
 
   const input=document.createElement('input');
   input.type='search';
-  input.placeholder='Nombre, categoría, distrito...';
+  input.placeholder=t('Nombre, categoría, distrito...');
   input.value=query;
 
   const results=document.createElement('div');
@@ -785,13 +807,13 @@ function renderPanel(type){
    const hits=locations.filter(matches);
 
    results.append(paragraph(
-    `${hits.length} resultados`
+    `${hits.length} ${choose('resultados', 'results')}`
    ));
 
    for(const p of hits.slice(0,60)){
 
     const b=makeButton(
-     `${category(p).icon||'📍'} ${p.name||categoryLabel(p)}`,
+     `${category(p).icon||'📍'} ${pointLabel(p)}`,
      ()=>openLocation(p)
     );
 
@@ -883,7 +905,7 @@ function renderPanel(type){
    renderMarkers();
   };
 
-  option.append(check,'Ocultar encontrados');
+  option.append(check,t('Ocultar encontrados'));
   content.append(option);
 
   const counts=new Map();
@@ -922,7 +944,7 @@ function renderPanel(type){
    const summary=document.createElement('summary');
 
    summary.textContent=
-    groupNames[group]||group;
+    choose(groupNames[group]||group, group);
 
    details.append(summary);
 
@@ -950,7 +972,7 @@ function renderPanel(type){
     const name=document.createElement('span');
 
     name.textContent=
-     `${c.icon||'📍'} ${translations[c.key]||c.name}`;
+     `${c.icon||'📍'} ${categoryLabel({kind:c.key,type:c.name})}`;
 
     const total=document.createElement('span');
 
@@ -980,7 +1002,7 @@ function renderPanel(type){
    :0;
 
   const title=document.createElement('h3');
-  title.textContent=`${percent}% completado`;
+  title.textContent=`${percent}% ${choose('completado', 'complete')}`;
 
   const track=document.createElement('div');
   track.className='progress-track';
@@ -995,7 +1017,7 @@ function renderPanel(type){
    title,
    track,
    paragraph(
-    `${done} de ${trackable.length} ubicaciones registradas`
+    `${done} ${choose('de', 'of')} ${trackable.length} ${choose('ubicaciones registradas', 'locations found')}`
    ),
    paragraph(
     'Progreso guardado en este navegador. Todavía no está sincronizado con tu cuenta.'
@@ -1075,7 +1097,7 @@ async function loadData(){
  }catch(error){
 
   $('status').textContent=
-   'Error al cargar datos: '+error.message;
+   choose('Error al cargar datos', 'Could not load map data') + ': ' + error.message;
  }
 }
 
@@ -1109,7 +1131,7 @@ $('fullButton').onclick=async()=>{
 
  }catch{
   $('status').textContent=
-   'Pantalla completa no disponible';
+   t('Pantalla completa no disponible');
  }
 };
 
@@ -1130,13 +1152,14 @@ loadData();
 </script>
 
 <script src="./garaje-datos.js"></script>
-<script src="./mapa-v82.js?v=3"></script>
+<script src="./mapa-v82.js?v=4"></script>
 
 <script src="./config.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
-<script src="./mapa-v83.js?v=1"></script>
+<script src="./mapa-v83.js?v=2"></script>
 
+<script src="./mapa-comunidad.js"></script>
 </body>
 </html>

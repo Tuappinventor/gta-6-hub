@@ -1,6 +1,7 @@
 (() => {
   'use strict';
 
+  const { language, t, choose, translationButton } = window.ViceLanguage;
   const panel = document.getElementById('guideMapLocations');
   const search = document.getElementById('guideSearch');
   const category = document.getElementById('guideCategory');
@@ -31,12 +32,12 @@
 
     const tag = document.createElement('span');
     tag.className = 'tag';
-    tag.textContent = icon + ' ' + label + ' · Verificado';
+    tag.textContent = icon + ' ' + t(label) + ' · ' + t('Verificado');
     if (/^https:\/\//i.test(location.image_url || '')) {
       const image = document.createElement('img');
       image.className = 'guide-cover';
       image.src = location.image_url;
-      image.alt = 'Imagen de ' + location.name;
+      image.alt = choose('Imagen de ', 'Image of ') + location.name;
       image.loading = 'lazy';
       image.addEventListener('error', () => image.remove());
       article.append(image);
@@ -45,35 +46,43 @@
     const title = document.createElement('h3');
     title.textContent = location.name;
     const description = document.createElement('p');
-    description.textContent = location.description || 'Ubicación publicada en el mapa de Leonida.';
+    description.textContent = location.description || t('Ubicación publicada en el mapa de Leonida.');
     const mapLink = document.createElement('a');
     mapLink.className = 'guide-link';
     mapLink.href = './mapa-interactivo.html?location=' + encodeURIComponent(location.id);
-    mapLink.textContent = '📍 Ver en el mapa original';
+    mapLink.textContent = t('📍 Ver en el mapa original');
 
-    article.append(tag, title, description, mapLink);
+    article.append(tag, title, description);
+    if (language === 'en' && location.description) {
+      description.lang = 'es';
+      description.dataset.original = '';
+      article.append(translationButton([description], 'es'));
+    }
+    article.append(mapLink);
     return article;
   }
 
   function render() {
-    const query = search.value.trim().toLocaleLowerCase('es');
+    const query = search.value.trim().toLocaleLowerCase(language);
     const rows = locations.filter(location => {
       const label = categories[location.category]?.[0];
-      const text = [location.name, location.description, location.category, label].join(' ');
+      const text = [location.name, location.description, location.category, label, t(label)].join(' ');
       return (category.value === 'all' || location.category === category.value)
-        && text.toLocaleLowerCase('es').includes(query);
+        && text.toLocaleLowerCase(language).includes(query);
     });
 
     if (!rows.length) {
       grid.replaceChildren();
-      status.textContent = locations.length
+      status.textContent = t(locations.length
         ? 'No hay ubicaciones con esos filtros.'
-        : 'Todavía no hay ubicaciones verificadas publicadas.';
+        : 'Todavía no hay ubicaciones verificadas publicadas.');
       return;
     }
 
-    status.textContent = (rows.length === 1 ? '1 ubicación verificada' : rows.length + ' ubicaciones verificadas')
-      + (rows.length === locations.length ? '' : ' de ' + locations.length);
+    status.textContent = rows.length + ' ' + (rows.length === 1
+      ? choose('ubicación verificada', 'verified location')
+      : choose('ubicaciones verificadas', 'verified locations'))
+      + (rows.length === locations.length ? '' : choose(' de ', ' of ') + locations.length);
     grid.replaceChildren(...rows.map(card));
   }
 
@@ -97,7 +106,7 @@
     for (const key of [...new Set(locations.map(location => location.category))].sort()) {
       const option = document.createElement('option');
       option.value = key;
-      option.textContent = categories[key]?.[0] || key;
+      option.textContent = t(categories[key]?.[0] || key);
       category.append(option);
     }
     search.addEventListener('input', render);
