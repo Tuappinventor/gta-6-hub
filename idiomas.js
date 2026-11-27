@@ -7,6 +7,81 @@
   document.documentElement.lang = language;
 
   const labels = {
+    "Actualidad": "Latest news",
+    "Oficiales y actualidad": "Official and latest news",
+    "Rumores": "Rumors",
+    "Filtraciones": "Leaks",
+    "Tráilers": "Trailers",
+    "Lanzamiento": "Release",
+    "Actualizaciones": "Updates",
+    "Mapa y localizaciones": "Map and locations",
+    "Personajes": "Characters",
+    "Vehículos": "Vehicles",
+    "Armas": "Weapons",
+    "Propiedades y negocios": "Properties and businesses",
+    "Música y radio": "Music and radio",
+    "Trucos y códigos": "Cheats and codes",
+    "Dinero": "Money",
+    "Misiones": "Missions",
+    "Coleccionables": "Collectibles",
+    "Secretos y Easter Eggs": "Secrets and Easter eggs",
+    "Logros y trofeos": "Achievements and trophies",
+    "Curiosidades": "Trivia",
+    "Rendimiento y plataformas": "Performance and platforms",
+    "Errores y soluciones": "Bugs and fixes",
+    "Fuente oficial": "Official source",
+    "Fuente secundaria": "Secondary source",
+    "Sin verificar": "Unverified",
+    "No confirmado": "Unconfirmed",
+    "Todas": "All",
+    "Oficial": "Official",
+    "Todo": "All",
+    "GUÍA": "GUIDE",
+    "NOTICIA": "NEWS",
+    "Categorías de portada": "Front-page categories",
+    "Tipo de publicación": "Publication type",
+    "VICE HUB · PORTADA DIGITAL": "VICE HUB · NEWSROOM",
+    "GTA VI: últimas noticias": "GTA VI: latest news",
+    "Actualidad, guías, trucos y novedades del universo de Grand Theft Auto VI.": "News, guides, cheats and updates from the world of Grand Theft Auto VI.",
+    "publicaciones disponibles": "publications available",
+    "Más publicaciones": "More articles",
+    "Cargar más publicaciones": "Load more articles",
+    "No hay publicaciones en esta categoría.": "There are no articles in this category.",
+    "Cargando publicaciones…": "Loading articles…",
+    "No se pudieron cargar las publicaciones.": "Could not load the articles.",
+    "Volver a intentar": "Try again",
+    "Leer artículo": "Read article",
+    "Leer artículo →": "Read article →",
+    "Leer guía": "Read guide",
+    "Consultar fuente": "View source",
+    "Todavía no hay guías publicadas.": "No guides have been published yet.",
+    "No se pudieron cargar las guías. Recarga para volver a intentarlo.": "Could not load the guides. Reload to try again.",
+    "No se pudo conectar con Supabase.": "Could not connect to the database.",
+    "Buscar noticias, guías, trucos, vehículos...": "Search news, guides, cheats and vehicles…",
+    "VICE HUB · REDACCIÓN DIGITAL": "VICE HUB · NEWSROOM",
+    "Última hora en Vice City": "Latest from Vice City",
+    "Noticias, guías, trucos y toda la información sobre GTA VI.": "Latest GTA VI news, guides and cheats.",
+    "Cargando…": "Loading…",
+    "Filtrar publicaciones": "Filter articles",
+    "Verificación": "Verification",
+    "Ordenar por": "Sort by",
+    "Más recientes": "Newest first",
+    "Más antiguas": "Oldest first",
+    "Título A-Z": "Title A–Z",
+    "Limpiar filtros": "Clear filters",
+    "Lee el artículo completo.": "Read the full article.",
+    "Fuente externa": "External source",
+    "Redacción": "Editorial team",
+    "No hay publicaciones que coincidan con los filtros seleccionados.": "No articles match the selected filters.",
+    "← Volver a noticias": "← Back to news",
+    "El artículo todavía no tiene contenido.": "This article has no content yet.",
+    "Información de terceros.": "Third-party information.",
+    "Contrasta los datos con la fuente original.": "Check the original source for details.",
+    "Artículo de VICE HUB.": "Article by VICE HUB.",
+    "Compartir artículo": "Share article",
+    "Enlace copiado": "Link copied",
+    "VICE HUB · Proyecto independiente de fans. No afiliado a Rockstar Games ni Take-Two Interactive.": "VICE HUB · Independent fan project. Unaffiliated with Rockstar Games or Take-Two Interactive.",
+
     'Inicio': 'Home', 'Noticias': 'News', 'Mapa': 'Map', 'Coches': 'Cars', 'Guías': 'Guides',
     'Mi progreso': 'My progress', 'Editorial': 'Editorial', 'PLATAFORMA INDEPENDIENTE · GTA VI': 'INDEPENDENT GTA VI HUB',
     'Tu aventura.': 'Your adventure.', 'Tu ciudad.': 'Your city.', 'Tu comunidad.': 'Your community.',
@@ -90,6 +165,11 @@
 
   const t = value => language === 'en' && Object.hasOwn(labels, value) ? labels[value] : value;
   const choose = (es, en) => language === 'en' ? en : es;
+  function localizedUrl(path) {
+    const url = new URL(path, location.origin);
+    if (language === 'en' || params.has('lang')) url.searchParams.set('lang', language);
+    return url.pathname + url.search + url.hash;
+  }
 
   function mount() {
     const header = document.querySelector('header');
@@ -216,11 +296,15 @@
     return actions;
   }
 
-  window.ViceLanguage = { language, t, choose, translationButton, translateInterface };
+  window.ViceLanguage = { language, t, choose, translationButton, translateInterface, localizedUrl };
   document.addEventListener('DOMContentLoaded', () => {
+    const article = document.querySelector('[data-editorial-article]');
+    if (article && language === 'en' && !params.has('lang')) {
+      location.replace(localizedUrl(location.href));
+      return;
+    }
     translateInterface(document.body);
     mount();
-    const article = document.querySelector('[data-editorial-article]');
     if (article && language === 'en') {
       const nodes = [...article.querySelectorAll('[data-original]')].filter(node => node.textContent.trim());
       const canonical = document.querySelector('link[rel=canonical]')?.href;

@@ -3,6 +3,7 @@ import Parser from 'rss-parser';
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'node:crypto';
+import { translatePublishedArticles } from './translate-articles.mjs';
 import { startAutomation } from './automation-logger.mjs';
 
 // VICE HUB AutoNews 3.6
@@ -42,6 +43,12 @@ async function main() {
   const ai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
   });
+
+  try {
+    await translatePublishedArticles({ db, ai, model: MODEL, logger });
+  } catch (error) {
+    console.warn('Could not process article translations:', error.message);
+  }
 
   const parser = new Parser({
     timeout: 12000,
