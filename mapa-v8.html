@@ -290,7 +290,7 @@ summary{
 </style>
 <script defer src="/web-analytics.js"></script>
 <link rel="stylesheet" href="/idiomas.css">
-<script src="/idiomas.js"></script>
+<script src="/idiomas.js?v=2"></script>
 </head>
 
 <body class="vice-map">
@@ -339,7 +339,7 @@ summary{
 <script>
 'use strict';
 
-const { language, t, choose, translationButton } = window.ViceLanguage;
+const { language, t, choose, translationButton, localizedUrl } = window.ViceLanguage;
 
 const BASE =
  'https://fbritoferreira.github.io/gta6';
@@ -655,6 +655,7 @@ function popup(p){
   related.href = guideSlug
    ? '/articulo/' + encodeURIComponent(guideSlug)
    : './index.html?' + new URLSearchParams({ coche: car.name }) + '#vehiculos';
+  related.href = localizedUrl(related.href);
   related.textContent = t(guideSlug ? 'Leer guía de cajas fuertes' : 'Ver ficha del coche');
   content.append(document.createElement('br'), related);
  }

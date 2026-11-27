@@ -5,6 +5,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 (() => {
   'use strict';
 
+  const { language, t, choose, translateInterface, translationButton } = window.ViceLanguage;
   const section = document.getElementById('noticias');
   const oldGrid = document.getElementById('newsGrid');
   const search = document.getElementById('newsSearch');
@@ -72,7 +73,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
     return Number.isNaN(d.getTime())
       ? ''
-      : new Intl.DateTimeFormat('es-ES', {
+      : new Intl.DateTimeFormat(language, {
           dateStyle: 'medium'
         }).format(d);
   };
@@ -112,7 +113,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
   oldGrid.hidden = true;
 
   search.placeholder =
-    'Buscar noticias, guías, trucos, vehículos...';
+    t('Buscar noticias, guías, trucos, vehículos...');
 
   const root = document.createElement('div');
 
@@ -233,6 +234,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
     </div>
   `;
 
+  translateInterface(root);
   section.insertBefore(root, oldGrid);
 
   const $ = id => document.getElementById(id);
@@ -294,7 +296,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
         .filter(([key]) => counts[key] > 0)
         .map(([key, name]) => `
           <option value="${esc(key)}">
-            ${esc(name)} (${counts[key]})
+            ${esc(t(name))} (${counts[key]})
           </option>
         `).join('')}
     `;
@@ -310,7 +312,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
     return getCategories(article)
       .map(c => `
         <span class="vh-category-badge">
-          ${esc(CATEGORY_NAMES[c] || c)}
+          ${esc(t(CATEGORY_NAMES[c] || c))}
         </span>
       `)
       .join('');
@@ -321,7 +323,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
     return `
       <span class="vh-verification vh-verification-${level}">
-        ${esc(VERIFICATION_NAMES[level])}
+        ${esc(t(VERIFICATION_NAMES[level]))}
       </span>
     `;
   }
@@ -347,8 +349,10 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
       const searchable = normalize([
         a.title,
         a.summary,
+        a.title_en,
+        a.summary_en,
         ...categories,
-        ...categories.map(c => CATEGORY_NAMES[c]),
+        ...categories.map(c => t(CATEGORY_NAMES[c] || c)),
         ...getTags(a)
       ].filter(Boolean).join(' '));
 
@@ -378,7 +382,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
     list.sort((a, b) => {
       if (sort === 'az') {
-        return a.title.localeCompare(b.title, 'es');
+        return publicHeadline(a, language).localeCompare(publicHeadline(b, language), language);
       }
 
       const dateA = Date.parse(a.published_at) || 0;
@@ -390,7 +394,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
     });
 
     $('vhNewsCount').textContent =
-      `${list.length} de ${articles.length} publicaciones`;
+      `${list.length} ${choose('de', 'of')} ${articles.length} ${choose('publicaciones', 'articles')}`;
 
     $('vhNewsCards').innerHTML = list
       .map((a, i) => {
@@ -442,10 +446,10 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
               ${verificationBadge(a)}
 
-              <h3>${esc(publicHeadline(a))}</h3>
+              <h3>${esc(publicHeadline(a, language))}</h3>
 
               <p>
-                ${esc(a.summary ||
+                ${esc(choose(a.summary, a.summary_en || a.summary) ||
                   'Lee el artículo completo.')}
               </p>
 
@@ -479,6 +483,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
         No hay publicaciones que coincidan
         con los filtros seleccionados.
       </p>`;
+    translateInterface($('vhNewsCards'));
   }
 
   function toggleFilters(visible) {
@@ -522,7 +527,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
       ? `<a href="${esc(src)}"
             target="_blank"
             rel="noopener noreferrer nofollow">
-           ${articleSourceLabel(src)} ↗
+           ${articleSourceLabel(src, language)} ↗
          </a>`
       : '';
 
@@ -546,16 +551,16 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
         ${verificationBadge(a)}
 
-        <h1>${esc(publicHeadline(a))}</h1>
+        <h1>${esc(publicHeadline(a, language))}</h1>
 
-        <p>${esc(a.summary || '')}</p>
+        <p>${esc(choose(a.summary, a.summary_en || a.summary) || '')}</p>
 
       </div>
 
       ${image
         ? `<img class="vh-article-image"
                 src="${esc(image)}"
-                alt="${esc(publicHeadline(a))}">
+                alt="${esc(publicHeadline(a, language))}">
            ${a.image_credit
              ? `<small class="vh-image-credit">
                   ${esc(a.image_credit)}
@@ -566,8 +571,8 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
       <div class="vh-article-body">
 
-        ${paragraphs(a.body)
-          .map(p => `<p>${esc(p)}</p>`)
+        ${paragraphs(choose(a.body, a.body_en || a.body))
+          .map(p => `<p${language === 'en' && !a.body_en ? ' data-original lang="es"' : ''}>${esc(p)}</p>`)
           .join('') ||
           '<p>El artículo todavía no tiene contenido.</p>'
         }
@@ -591,7 +596,14 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
       </div>
     `;
 
-    $('vhArticle').hidden = false;
+    const renderedArticle = $('vhArticle');
+    translateInterface(renderedArticle);
+    const untranslated = [...renderedArticle.querySelectorAll('[data-original]')];
+    if (untranslated.length) {
+      const canonical = a.slug && new URL('/articulo/' + encodeURIComponent(a.slug), location.origin).href;
+      renderedArticle.querySelector('.vh-article-body').prepend(translationButton(untranslated, 'es', language, canonical));
+    }
+    renderedArticle.hidden = false;
 
     $('vhBack').onclick = () => closeArticle();
 
@@ -601,14 +613,14 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
       try {
         if (navigator.share) {
           await navigator.share({
-            title: publicHeadline(a),
+            title: publicHeadline(a, language),
             url: link
           });
         } else if (navigator.clipboard) {
           await navigator.clipboard.writeText(link);
 
           $('vhShare').textContent =
-            'Enlace copiado';
+            t('Enlace copiado');
         }
       } catch (error) {
         console.warn('Compartir:', error);
@@ -669,6 +681,9 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
     'title',
     'summary',
     'body',
+    'title_en',
+    'summary_en',
+    'body_en',
     'kind',
     'published_at',
     'source_url',

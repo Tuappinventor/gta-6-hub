@@ -9,6 +9,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 (() => {
   'use strict';
 
+  const { language, t, choose, localizedUrl } = window.ViceLanguage;
   const cfg = window.VICEHUB_CONFIG || {};
 
   if (!cfg.url || !cfg.anonKey ||
@@ -84,7 +85,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
     return Number.isNaN(d.getTime())
       ? ''
-      : d.toLocaleDateString('es-ES');
+      : d.toLocaleDateString(language);
   };
 
   const home = document.getElementById('inicio');
@@ -142,19 +143,19 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
         ? 'guias'
         : 'actualidad');
 
-    return CATEGORIES[category] || 'Actualidad';
+    return t(CATEGORIES[category] || 'Actualidad');
   }
 
   function verificationName(article) {
     switch (article.verification_level) {
       case 'official':
-        return 'Fuente oficial';
+        return t('Fuente oficial');
 
       case 'secondary':
-        return 'Fuente secundaria';
+        return t('Fuente secundaria');
 
       default:
-        return 'Sin verificar';
+        return t('Sin verificar');
     }
   }
 
@@ -216,7 +217,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
     return `
       <div class="v3-cats"
-           aria-label="Categorías de portada">
+           aria-label="${t('Categorías de portada')}">
 
         ${available.map(([key, name]) => `
           <button
@@ -231,7 +232,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
               selectedCategory === key
             }"
           >
-            ${esc(name)}
+            ${esc(t(name))}
             ${key !== 'all'
               ? ` (${counts[key]})`
               : ''}
@@ -251,7 +252,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
     return `
       <div class="v3-cats"
-           aria-label="Tipo de publicación">
+           aria-label="${t('Tipo de publicación')}">
 
         ${types.map(([key, name]) => `
           <button
@@ -266,7 +267,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
               selectedType === key
             }"
           >
-            ${esc(name)}
+            ${esc(t(name))}
           </button>
         `).join('')}
 
@@ -276,7 +277,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
   function card(article, featured = false) {
     const image = validUrl(article.image_url);
-    const title = publicHeadline(article);
+    const title = publicHeadline(article, language);
     const source = validUrl(article.source_url);
 
     const cover = image
@@ -302,7 +303,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
     const extraCategories = categories
       .filter(c => c !== article.category)
       .slice(0, 3)
-      .map(c => CATEGORIES[c] || c)
+      .map(c => t(CATEGORIES[c] || c))
       .join(' · ');
 
     const sourceText = [
@@ -312,8 +313,8 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
     const type =
       article.kind === 'guide'
-        ? 'GUÍA'
-        : 'NOTICIA';
+        ? t('GUÍA')
+        : t('NOTICIA');
 
     return `
       <article class="v3-feature">
@@ -335,7 +336,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
           ${heading}
 
           <p>
-            ${esc(article.summary || '')}
+            ${esc(choose(article.summary, article.summary_en || article.summary) || '')}
           </p>
 
           ${extraCategories
@@ -349,7 +350,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
           <p class="v3-source">
             ${esc(sourceText)}
-            ${source ? ` · <a href="${esc(source)}" rel="nofollow noopener noreferrer">${articleSourceLabel(source)}</a>` : ''}
+            ${source ? ` · <a href="${esc(source)}" rel="nofollow noopener noreferrer">${articleSourceLabel(source, language)}</a>` : ''}
           </p>
 
           <button
@@ -357,7 +358,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
             class="v3-read"
             data-v3-open="${esc(article.id)}"
           >
-            Leer artículo →
+            ${t('Leer artículo →')}
           </button>
 
         </div>
@@ -384,14 +385,13 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
     mount.innerHTML = `
       <div class="v3-label">
-        VICE HUB · PORTADA DIGITAL
+        ${t('VICE HUB · PORTADA DIGITAL')}
       </div>
 
-      <h1>GTA VI: últimas noticias</h1>
+      <h1>${t('GTA VI: últimas noticias')}</h1>
 
       <p class="muted">
-        Actualidad, guías, trucos y novedades
-        del universo de Grand Theft Auto VI.
+        ${t('Actualidad, guías, trucos y novedades del universo de Grand Theft Auto VI.')}
       </p>
 
       ${typeButtons()}
@@ -400,7 +400,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
       <p class="muted">
         ${filtered.length}
-        publicaciones disponibles
+        ${t('publicaciones disponibles')}
       </p>
 
       ${
@@ -426,7 +426,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
             ${
               visible.length > 3
                 ? `
-                  <h2>Más publicaciones</h2>
+                  <h2>${t('Más publicaciones')}</h2>
 
                   <div class="v3-list">
                     ${visible.slice(3)
@@ -445,7 +445,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
                       type="button"
                       data-v3-more="true"
                     >
-                      Cargar más publicaciones
+                      ${t('Cargar más publicaciones')}
                     </button>
                   </div>
                 `
@@ -454,7 +454,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
           `
           : `
             <p class="v3-empty">
-              No hay publicaciones en esta categoría.
+              ${t('No hay publicaciones en esta categoría.')}
             </p>
           `
       }
@@ -469,7 +469,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
       /^[a-z0-9-]+$/.test(article.slug)
     ) {
       window.location.assign(
-        `/articulo/${encodeURIComponent(article.slug)}`
+        localizedUrl(`/articulo/${encodeURIComponent(article.slug)}`)
       );
 
       return;
@@ -532,7 +532,7 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
   async function loadArticles() {
     mount.innerHTML = `
       <p class="v3-empty">
-        Cargando publicaciones…
+        ${t('Cargando publicaciones…')}
       </p>
     `;
 
@@ -544,6 +544,8 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
           'slug',
           'title',
           'summary',
+          'title_en',
+          'summary_en',
           'kind',
           'published_at',
           'source_url',
@@ -581,14 +583,14 @@ import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
       mount.innerHTML = `
         <p class="v3-empty">
-          No se pudieron cargar las publicaciones.
+          ${t('No se pudieron cargar las publicaciones.')}
         </p>
 
         <button
           type="button"
           id="v3Retry"
         >
-          Volver a intentar
+          ${t('Volver a intentar')}
         </button>
       `;
 

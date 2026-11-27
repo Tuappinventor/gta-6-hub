@@ -14,7 +14,7 @@
   event.preventDefault();
   event.stopImmediatePropagation();
 
-  window.location.assign('./mapa-v8.html');
+  window.location.assign(window.ViceLanguage.localizedUrl('/mapa-v8.html'));
 
  };
 
