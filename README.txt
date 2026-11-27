@@ -1,1 +1,0 @@
-Sube mapa-interactivo.html a la raíz de tu repositorio y la carpeta assets/ con leonida-map.svg. Abre /mapa-interactivo.html. Mapa y puntos ilustrativos; sustituye por cartografía y coordenadas verificadas antes de presentarlo como mapa real. Sin conexión Supabase.
