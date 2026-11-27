@@ -1,0 +1,1 @@
+Archivo de prueba para verificar el permiso de escritura de Codex en VICE HUB.
