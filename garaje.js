@@ -19,6 +19,8 @@
     .replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
   const modelKey = name => normalize(name).replace(/[^a-z0-9]/g, '');
   const inputFilters = [category, make];
+  let linkedCar = new URLSearchParams(window.location.search).get('coche') || '';
+  if (linkedCar) search.value = linkedCar;
   let cars = [];
   let matches = [];
   let shown = 0;
@@ -66,6 +68,7 @@
     if (!car.description && !car.acquisition && !car.sourceUrl && !car.mapId && !image) return;
 
     const details = add(body, 'details');
+    details.open = Boolean(linkedCar && modelKey(linkedCar) === modelKey(car.name));
     add(details, 'summary', 'Ver ficha').setAttribute('aria-label', `Ver ficha de ${car.name}`);
     if (car.description) add(details, 'p', car.description);
     if (car.acquisition) add(details, 'p', car.acquisition);
@@ -75,7 +78,7 @@
       if (car.sourceUrl) link(links, car.sourceLabel, car.sourceUrl);
       if (image) link(links, 'Abrir imagen', image);
       if (car.mapId) {
-        link(links, car.mapLabel, `./mapa-v8.html?id=${encodeURIComponent(car.mapId)}`);
+        link(links, car.mapLabel || 'Ver ubicación en el mapa', `./mapa-v8.html?id=${encodeURIComponent(car.mapId)}`);
       }
     }
   }
@@ -85,7 +88,8 @@
     matches = cars.filter(car => {
       const text = normalize([car.name, car.make, car.category, car.description].join(' '))
         .replace(/['’]/g, '');
-      return (!category.value || car.category === category.value)
+      return (!linkedCar || modelKey(car.name) === modelKey(linkedCar))
+        && (!category.value || car.category === category.value)
         && (!make.value || car.make === make.value)
         && words.every(word => text.includes(word.replace(/['’]/g, '')));
     });
@@ -104,7 +108,7 @@
     status.textContent = matches.length
       ? `${shown} de ${matches.length} resultados · ${cars.length} fichas en el catálogo`
       : 'No hay coches que coincidan con la búsqueda.';
-    if (moveFocus && next.length) grid.children[firstNew].querySelector('summary').focus();
+    if (moveFocus && next.length) grid.children[firstNew].querySelector('summary')?.focus();
   }
 
   function setCars(rows) {
@@ -252,7 +256,10 @@
   }
 
   more.addEventListener('click', () => showMore(true));
-  search.addEventListener('input', render);
+  search.addEventListener('input', () => {
+    linkedCar = '';
+    render();
+  });
   for (const select of inputFilters) select.addEventListener('change', render);
   setCars([]);
   if (window.location.hash === '#vehiculos') {

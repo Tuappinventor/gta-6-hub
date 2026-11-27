@@ -621,6 +621,20 @@ function popup(p){
   content.append(button);
  }
 
+ const guideSlug = Object.keys(guideMapLinks).find(slug =>
+  guideMapLinks[slug].some(point => point.id === p.id)
+ );
+ const car = window.VICEHUB_GARAGE_CARS?.find(vehicle => vehicle.mapId === p.id);
+
+ if (guideSlug || car) {
+  const related = document.createElement('a');
+  related.href = guideSlug
+   ? '/articulo/' + encodeURIComponent(guideSlug)
+   : './index.html?' + new URLSearchParams({ coche: car.name }) + '#vehiculos';
+  related.textContent = guideSlug ? 'Leer guía de cajas fuertes' : 'Ver ficha del coche';
+  content.append(document.createElement('br'), related);
+ }
+
  const link=document.createElement('a');
 
  link.href=BASE+'/?id='+encodeURIComponent(p.id);
@@ -1016,50 +1030,23 @@ function renderPanel(type){
  }
 }
 
-async function getJSON(path){
-
- const response=await fetch(BASE+path);
-
- if(!response.ok){
-  throw Error('HTTP '+response.status);
- }
-
- return response.json();
-}
+const mapModules = import('./leonida-data.js');
+let guideMapLinks = {};
+const getJSON = async path => (await mapModules).fetchLeonidaJson(path);
 
 async function loadData(){
-
- try{
-
-  const [data,meta]=await Promise.all([
-   getJSON('/data/locations.json'),
-   getJSON('/data/categories.json')
+ try {
+  const { fetchLeonidaJson, loadLeonidaLocations } = await mapModules;
+  const [data,meta,guides] = await Promise.all([
+   loadLeonidaLocations(),
+   fetchLeonidaJson('/data/categories.json'),
+   import('./guide-map-links.js')
   ]);
 
-  if(!Array.isArray(data)||
-     !Array.isArray(meta.kinds)){
-   throw Error('Formato de datos incompatible');
-  }
-
-  categories=new Map(
-   meta.kinds.map(c=>[c.key,c])
-  );
-
-  const ids=new Set();
-
-  locations=data.filter(p=>{
-
-   if(!p||!p.id||ids.has(p.id)||
-      !Number.isFinite(p.x)||
-      !Number.isFinite(p.y)||
-      p.x<0||p.x>1024||
-      p.y<0||p.y>1024){
-    return false;
-   }
-
-   ids.add(p.id);
-   return true;
-  });
+  if (!Array.isArray(meta.kinds)) throw new Error('Formato de datos incompatible');
+  categories = new Map(meta.kinds.map(category => [category.key, category]));
+  locations = data;
+  guideMapLinks = guides.guideMapLinks;
 
   const saved=read(':active',null);
 
@@ -1134,7 +1121,8 @@ loadData();
 
 </script>
 
-<script src="./mapa-v82.js?v=2"></script>
+<script src="./garaje-datos.js"></script>
+<script src="./mapa-v82.js?v=3"></script>
 
 <script src="./config.js"></script>
 

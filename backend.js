@@ -1,8 +1,14 @@
+import { loadLeonidaLocations } from './leonida-data.js';
+import { publicHeadline } from './article-verification.js';
+
 /* Integración opcional: Supabase Auth, contenido y progreso. */
 (() => {
  const cfg=window.VICEHUB_CONFIG||{};
  const $=id=>document.getElementById(id);
  const msg=(id,value)=>{if($(id)) $(id).textContent=value};
+ loadLeonidaLocations()
+  .then(locations => msg('spins', locations.length.toLocaleString('es-ES')))
+  .catch(() => msg('spins', '—'));
  const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  let db=null,user=null,role='reader';
  if(cfg.url && cfg.anonKey && window.supabase){db=window.supabase.createClient(cfg.url,cfg.anonKey);}
@@ -20,10 +26,10 @@
   if(['editor','admin'].includes(role))await loadEditor();
  }
  async function loadArticles(){
-  const {data,error}=await db.from('articles').select('id,title,summary,kind,published_at').eq('status','published').order('published_at',{ascending:false}).limit(60);
+  const {data,error}=await db.from('articles').select('id,title,summary,kind,published_at,category,verification_level').eq('status','published').order('published_at',{ascending:false}).limit(60);
   if(error){msg('authMessage',error.message);return;}
   if(!data?.length){$('newsGrid').innerHTML='<p class="empty">Aún no hay artículos publicados.</p>';return;}
-  const draw=()=>{let q=$('newsSearch').value.toLowerCase();$('newsGrid').innerHTML=data.filter(a=>(a.title+' '+(a.summary||'')).toLowerCase().includes(q)).map(a=>`<article class="card"><span class="tag">${a.kind==='guide'?'Guía':'Noticia'}</span><h3>${escapeHTML(a.title)}</h3><p class="muted">${escapeHTML(a.summary)}</p></article>`).join('')||'<p class="empty">Sin resultados</p>';};
+  const draw=()=>{let q=$('newsSearch').value.toLowerCase();$('newsGrid').innerHTML=data.filter(a=>(a.title+' '+(a.summary||'')).toLowerCase().includes(q)).map(a=>`<article class="card"><span class="tag">${a.kind==='guide'?'Guía':'Noticia'}</span><h3>${escapeHTML(publicHeadline(a))}</h3><p class="muted">${escapeHTML(a.summary)}</p></article>`).join('')||'<p class="empty">Sin resultados</p>';};
   $('newsSearch').addEventListener('input',draw);draw();$('snews').textContent=data.length;
  }
  function savedDiscoveries(key){
@@ -38,14 +44,12 @@
   const uid=user?.id;
   const progressKey=uid?'vicehub-maps-v81:account:'+uid+':found':'vicehub-maps-v81:found';
   const localCount=savedDiscoveries(progressKey);
-  const verified=db.from('vice_map_locations').select('id',{count:'exact',head:true}).eq('verified',true);
   const discoveries=uid && localCount===null
    ? db.from('map_user_progress').select('location_id',{count:'exact',head:true}).eq('user_id',uid).eq('state_type','found').eq('enabled',true)
    : Promise.resolve({count:localCount??0,error:null});
-  const [pins,found]=await Promise.all([verified,discoveries]);
+  const found=await discoveries;
   if(uid!==user?.id)return;
   const format=new Intl.NumberFormat('es-ES');
-  msg('spins',pins.error?'—':format.format(pins.count??0));
   msg('sdone',found.error?'—':format.format(found.count??0));
   msg('progressSummary',found.error
    ? 'Consulta tus descubrimientos desde el mapa de Leonida.'

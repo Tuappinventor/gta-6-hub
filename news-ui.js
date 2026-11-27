@@ -1,3 +1,4 @@
+import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
 /* VICE HUB 3.5 — Noticias, guías y categorías */
 
@@ -441,7 +442,7 @@
 
               ${verificationBadge(a)}
 
-              <h3>${esc(a.title)}</h3>
+              <h3>${esc(publicHeadline(a))}</h3>
 
               <p>
                 ${esc(a.summary ||
@@ -521,7 +522,7 @@
       ? `<a href="${esc(src)}"
             target="_blank"
             rel="noopener noreferrer nofollow">
-           Consultar fuente original ↗
+           ${articleSourceLabel(src)} ↗
          </a>`
       : '';
 
@@ -545,7 +546,7 @@
 
         ${verificationBadge(a)}
 
-        <h1>${esc(a.title)}</h1>
+        <h1>${esc(publicHeadline(a))}</h1>
 
         <p>${esc(a.summary || '')}</p>
 
@@ -554,7 +555,7 @@
       ${image
         ? `<img class="vh-article-image"
                 src="${esc(image)}"
-                alt="${esc(a.title)}">
+                alt="${esc(publicHeadline(a))}">
            ${a.image_credit
              ? `<small class="vh-image-credit">
                   ${esc(a.image_credit)}
@@ -600,7 +601,7 @@
       try {
         if (navigator.share) {
           await navigator.share({
-            title: a.title,
+            title: publicHeadline(a),
             url: link
           });
         } else if (navigator.clipboard) {

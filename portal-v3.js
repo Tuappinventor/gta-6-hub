@@ -1,3 +1,4 @@
+import { articleSourceLabel, publicHeadline } from './article-verification.js';
 
 /* ==========================================
    VICE HUB 3.5 — Portal principal
@@ -275,6 +276,8 @@
 
   function card(article, featured = false) {
     const image = validUrl(article.image_url);
+    const title = publicHeadline(article);
+    const source = validUrl(article.source_url);
 
     const cover = image
       ? `
@@ -291,8 +294,8 @@
       : 'VI';
 
     const heading = featured
-      ? `<h2>${esc(article.title)}</h2>`
-      : `<h3>${esc(article.title)}</h3>`;
+      ? `<h2>${esc(title)}</h2>`
+      : `<h3>${esc(title)}</h3>`;
 
     const categories = getCategories(article);
 
@@ -346,6 +349,7 @@
 
           <p class="v3-source">
             ${esc(sourceText)}
+            ${source ? ` · <a href="${esc(source)}" rel="nofollow noopener noreferrer">${articleSourceLabel(source)}</a>` : ''}
           </p>
 
           <button
