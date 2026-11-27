@@ -450,6 +450,7 @@ let found=new Set(read(':found',[]));
 let hideFound=!!read(':hideFound',false);
 let currentPanel='';
 let query='';
+const paranormalSearch = 'Ovnis y fantasmas';
 let loaded=false;
 
 const markerIndex=new Map();
@@ -528,8 +529,10 @@ function categoryLabel(p){
 
 function matches(p){
 
+ if (normalize(query) === normalize(paranormalSearch)) return p.paranormal === true;
+
  const text=normalize([
-  p.name,p.type,p.kind,
+  p.name,p.originalName,p.type,p.kind,
   p.district,p.area,
   p.description,categoryLabel(p)
  ].join(' '));
@@ -638,7 +641,7 @@ function popup(p){
 
  const link=document.createElement('a');
 
- link.href=BASE+'/?id='+encodeURIComponent(p.id);
+ link.href=p.sourceUrl || BASE+'/?id='+encodeURIComponent(p.id);
  link.target='_blank';
  link.rel='noopener';
  link.textContent='Consultar fuente original';
@@ -810,6 +813,10 @@ function renderPanel(type){
 
   content.append(
    input,
+   makeButton(paranormalSearch,()=>{
+    input.value=paranormalSearch;
+    update();
+   }),
    makeButton('Limpiar búsqueda',()=>{
     input.value='';
     update();

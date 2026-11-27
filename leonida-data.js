@@ -1,3 +1,5 @@
+import { alienLaboratory, paranormalLocations } from './leonida-paranormal.js';
+
 export const LEONIDA_BASE = 'https://fbritoferreira.github.io/gta6';
 
 export async function fetchLeonidaJson(path) {
@@ -11,7 +13,7 @@ export async function loadLeonidaLocations() {
   if (!Array.isArray(data)) throw new Error('Formato de datos incompatible');
 
   const ids = new Set();
-  return data.filter(point => {
+  return [...data, alienLaboratory].filter(point => {
     if (!point?.id || ids.has(point.id) ||
         !Number.isFinite(point.x) || !Number.isFinite(point.y) ||
         point.x < 0 || point.x > 1024 || point.y < 0 || point.y > 1024) {
@@ -20,5 +22,15 @@ export async function loadLeonidaLocations() {
 
     ids.add(point.id);
     return true;
+  }).map(point => {
+    const details = paranormalLocations[point.id];
+    if (!details) return point;
+
+    return {
+      ...point,
+      ...details,
+      originalName: point.name,
+      paranormal: true,
+    };
   });
 }
