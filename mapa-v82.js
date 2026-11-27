@@ -252,7 +252,7 @@ async function shareLocation(p) {
   if(navigator.share) {
 
    await navigator.share({
-    title:p.name || categoryLabel(p),
+    title:pointLabel(p),
     text:'Ubicación en VICE HUB',
     url:link
    });
@@ -293,10 +293,9 @@ popup = function(p) {
 
    saveFavorites();
 
-   favoriteButton.textContent =
-    favorites.has(p.id)
+   favoriteButton.textContent = t(favorites.has(p.id)
      ? '★ Quitar de favoritos'
-     : '☆ Añadir a favoritos';
+     : '☆ Añadir a favoritos');
 
    if(favoritesOnly) {
     map.closePopup();
@@ -334,7 +333,7 @@ popup = function(p) {
 function locationRow(p) {
 
  const b = makeButton(
-  `${category(p).icon || '📍'} ${p.name || categoryLabel(p)}`,
+  `${category(p).icon || '📍'} ${pointLabel(p)}`,
   () => showLocation(p)
  );
 
@@ -362,7 +361,7 @@ function progressText(list) {
   p => found.has(p.id)
  ).length;
 
- return `${list.length} lugares · ${done}/${trackable.length} registrados`;
+ return `${list.length} ${choose('lugares', 'locations')} · ${done}/${trackable.length} ${choose('registrados', 'found')}`;
 }
 
 renderPanel = function(type) {
@@ -396,9 +395,9 @@ renderPanel = function(type) {
  $('panel').hidden = false;
 
  $('panelTitle').textContent =
-  type === 'districts'
+  t(type === 'districts'
    ? 'Explorar distritos'
-   : 'Mis favoritos';
+   : 'Mis favoritos');
 
  document.querySelectorAll('[data-panel]')
  .forEach(b => {
@@ -446,7 +445,7 @@ renderPanel = function(type) {
   content.append(
    paragraph(
     selectedDistrict
-     ? 'Zona seleccionada: '+selectedDistrict
+     ? choose('Zona seleccionada', 'Selected area') + ': ' + selectedDistrict
      : 'Todas las zonas'
    )
   );
@@ -488,7 +487,7 @@ renderPanel = function(type) {
   );
 
   content.append(
-   paragraph(`${list.length} lugares guardados`),
+   paragraph(`${list.length} ${choose('lugares guardados', 'saved locations')}`),
 
    makeButton(
     favoritesOnly
@@ -543,7 +542,7 @@ function addNavButton(type,icon,label) {
  const symbol = document.createElement('span');
  symbol.textContent = icon;
 
- button.append(symbol,label);
+ button.append(symbol,t(label));
 
  button.onclick = () => {
 
@@ -578,7 +577,7 @@ renderMarkers = function() {
  }
 
  if(favoritesOnly) {
-  status.textContent += ' · Favoritos';
+  status.textContent += ' · ' + t('Favoritos');
  }
 };
 
@@ -726,7 +725,7 @@ function start() {
    showLocation(p);
   } else {
    $('status').textContent =
-    'Ubicación compartida no disponible';
+    t('Ubicación compartida no disponible');
   }
  }
 

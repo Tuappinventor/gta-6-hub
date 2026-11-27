@@ -1,4 +1,4 @@
-import { alienLaboratory, paranormalLocations } from './leonida-paranormal.js';
+import { alienLaboratory, paranormalEnglish, paranormalLocations } from './leonida-paranormal.js';
 
 export const LEONIDA_BASE = 'https://fbritoferreira.github.io/gta6';
 
@@ -24,11 +24,13 @@ export async function loadLeonidaLocations() {
     return true;
   }).map(point => {
     const details = paranormalLocations[point.id];
-    if (!details) return point;
+    const english = paranormalEnglish[point.id];
+    if (!details) return english ? { ...point, english } : point;
 
     return {
       ...point,
       ...details,
+      english,
       originalName: point.name,
       paranormal: true,
     };

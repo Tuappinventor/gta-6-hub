@@ -16,6 +16,11 @@ const client = window.supabase.createClient(
  config.anonKey
 );
 
+window.ViceMapAccount = {
+ client,
+ signIn: () => renderPanel('account')
+};
+
 const localRead = read;
 const localSave = save;
 const previousPanel = renderPanel;
@@ -58,14 +63,14 @@ function setMessage(text) {
 
  const el = document.getElementById('v83Status');
 
- if(el) el.textContent = text;
+ if(el) el.textContent = t(text);
 
  const badge = document.getElementById('v83Badge');
 
  if(badge) {
-  badge.textContent = user
+  badge.textContent = t(user
    ? ready ? '☁ Conectado' : '☁ Pendiente'
-   : 'Invitado';
+   : 'Invitado');
  }
 }
 
@@ -455,7 +460,7 @@ function field(type,placeholder) {
  const input = document.createElement('input');
 
  input.type = type;
- input.placeholder = placeholder;
+ input.placeholder = t(placeholder);
  input.style.marginBottom = '8px';
 
  return input;
@@ -466,7 +471,7 @@ function accountPanel() {
  currentPanel = 'account';
 
  $('panel').hidden = false;
- $('panelTitle').textContent = 'Mi cuenta';
+ $('panelTitle').textContent = t('Mi cuenta');
 
  document.querySelectorAll('[data-panel]')
  .forEach(button => {
@@ -557,7 +562,7 @@ function accountPanel() {
 
   link.href = './index.html';
   link.textContent =
-   'Crear cuenta o gestionar acceso en VICE HUB';
+   t('Crear cuenta o gestionar acceso en VICE HUB');
 
   content.append(
    email,
@@ -597,7 +602,7 @@ function accountPanel() {
 
   const caption = document.createElement('small');
 
-  caption.textContent = label;
+  caption.textContent = t(label);
 
   card.append(number,caption);
 
@@ -612,7 +617,7 @@ function accountPanel() {
   ),
 
   paragraph(
-   `${getPending(user.id).length} cambios pendientes`
+   `${getPending(user.id).length} ${choose('cambios pendientes', 'pending changes')}`
   ),
 
   makeButton(

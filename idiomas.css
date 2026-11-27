@@ -1,0 +1,80 @@
+.vice-language {
+  flex: 0 0 auto;
+  width: auto;
+  color: #f7f8ff;
+  background: #151a30;
+  border: 1px solid #52617a;
+  border-radius: 8px;
+  padding: 5px 6px;
+  min-height: 32px;
+  font: 600 .875rem system-ui, sans-serif;
+}
+.vice-translation {
+  margin: .45rem 0;
+}
+.vice-translate-status {
+  display: block;
+  font-size: .85rem;
+}
+.vice-portal header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: .75rem;
+}
+.vice-portal #nav {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.vice-portal header .vice-language {
+  grid-column: 2;
+  grid-row: 1;
+}
+.vice-comments {
+  margin: .75rem 0 0;
+  padding: .5rem 0 0;
+  border-top: 1px solid #52617a;
+}
+.vice-comments summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.vice-comments-list {
+  max-height: 145px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.vice-comments-list article {
+  border-bottom: 1px solid #52617a;
+  padding: .35rem 0;
+  overflow-wrap: anywhere;
+}
+.vice-comments-list article p {
+  margin: .2rem 0;
+  white-space: pre-wrap;
+}
+.vice-comments textarea {
+  box-sizing: border-box;
+  width: 100%;
+  font: inherit;
+}
+.vice-comments form {
+  margin-top: .5rem;
+}
+.vice-comments select {
+  margin-right: .35rem;
+}
+.vice-map header {
+  gap: .45rem;
+}
+.vice-map .vice-language {
+  max-width: 6rem;
+}
+@media (max-width: 390px) {
+  .vice-map header {
+    padding-inline: 8px;
+  }
+  .vice-map header .brand {
+    font-size: .75rem;
+  }
+}
