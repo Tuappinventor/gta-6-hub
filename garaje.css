@@ -84,6 +84,12 @@
   line-height: 1.2;
 }
 
+.garage-body .garage-inspiration {
+  margin: 0 0 12px;
+  color: #d7dcef;
+  line-height: 1.45;
+}
+
 .garage-body summary {
   width: fit-content;
   color: #ffafd3;

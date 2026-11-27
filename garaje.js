@@ -18,6 +18,8 @@
   const normalize = value => String(value ?? '').normalize('NFD')
     .replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
   const modelKey = name => normalize(name).replace(/[^a-z0-9]/g, '');
+  const inspirations = new Map(Object.entries(window.VICEHUB_GARAGE_INSPIRATIONS ?? {})
+    .map(([name, reference]) => [modelKey(name), reference]));
   const inputFilters = [category, make];
   let linkedCar = new URLSearchParams(window.location.search).get('coche') || '';
   if (linkedCar) search.value = linkedCar;
@@ -64,8 +66,13 @@
     const body = add(article, 'div', '', 'garage-body');
     if (car.category) add(body, 'span', car.category, 'tag');
     add(body, 'h3', car.name);
+    if (car.inspiration) {
+      const line = add(body, 'p', '', 'garage-inspiration');
+      add(line, 'strong', 'Inspirado en');
+      line.append(' · ' + car.inspiration.models);
+    }
 
-    if (!car.description && !car.acquisition && !car.sourceUrl && !car.mapId && !image) return;
+    if (!car.description && !car.acquisition && !car.sourceUrl && !car.mapId && !image && !car.inspiration) return;
 
     const details = add(body, 'details');
     details.open = Boolean(linkedCar && modelKey(linkedCar) === modelKey(car.name));
@@ -73,10 +80,11 @@
     if (car.description) add(details, 'p', car.description);
     if (car.acquisition) add(details, 'p', car.acquisition);
 
-    if (car.sourceUrl || car.mapId || image) {
+    if (car.sourceUrl || car.mapId || image || car.inspiration) {
       const links = add(details, 'div', '', 'garage-links');
       if (car.sourceUrl) link(links, car.sourceLabel, car.sourceUrl);
       if (image) link(links, 'Abrir imagen', image);
+      if (car.inspiration) link(links, `Referencia de diseño · ${car.inspiration.source}`, car.inspiration.url);
       if (car.mapId) {
         link(links, car.mapLabel || 'Ver ubicación en el mapa', `./mapa-v8.html?id=${encodeURIComponent(car.mapId)}`);
       }
@@ -86,7 +94,7 @@
   function render() {
     const words = normalize(search.value).split(/\s+/).filter(Boolean);
     matches = cars.filter(car => {
-      const text = normalize([car.name, car.make, car.category, car.description].join(' '))
+      const text = normalize([car.name, car.make, car.category, car.description, car.inspiration?.models].join(' '))
         .replace(/['’]/g, '');
       return (!linkedCar || modelKey(car.name) === modelKey(linkedCar))
         && (!category.value || car.category === category.value)
@@ -128,7 +136,8 @@
       });
     }
 
-    cars = [...byModel.values()].sort((first, second) => collator.compare(first.name, second.name));
+    cars = Array.from(byModel, ([key, car]) => ({ ...car, inspiration: inspirations.get(key) }))
+      .sort((first, second) => collator.compare(first.name, second.name));
     for (const [select, field] of [[category, 'category'], [make, 'make']]) {
       const previous = select.value;
       const values = [...new Set(cars.map(car => car[field]).filter(Boolean))];
