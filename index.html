@@ -528,6 +528,31 @@ main {
 
   <div id="editorWorkspace" class="hidden">
 
+    <section class="panel" id="editorialTraffic" aria-labelledby="trafficHeading">
+      <h3 id="trafficHeading">Tráfico web</h3>
+      <div class="tools">
+        <label for="trafficPeriod">Periodo</label>
+        <select id="trafficPeriod">
+          <option value="7">Últimos 7 días</option>
+          <option value="30">Últimos 30 días</option>
+        </select>
+        <button type="button" id="trafficReload">Actualizar</button>
+      </div>
+      <p class="muted" id="trafficStatus" role="status">Consulta las estadísticas de VICE HUB.</p>
+      <div id="trafficSummary" hidden>
+        <div class="stats">
+          <div class="stat"><strong id="trafficVisitors"></strong> Visitantes</div>
+          <div class="stat"><strong id="trafficPageviews"></strong> Páginas vistas</div>
+        </div>
+        <div class="grid">
+          <div><h4>Páginas más vistas</h4><ol id="trafficPages"></ol></div>
+          <div><h4>Principales orígenes</h4><ol id="trafficSources"></ol></div>
+        </div>
+      </div>
+      <p><a href="https://vercel.com/flisby-projects/gta-6-hub/analytics"
+        target="_blank" rel="noopener noreferrer">Abrir Analytics en Vercel</a></p>
+    </section>
+
     <form id="articleForm" class="editor-form">
 
       <input
@@ -707,6 +732,7 @@ document.querySelectorAll("[data-go]").forEach(button => {
   
   <script src="./editorial-v33.js"></script>
 <script src="./automation-access.js?v=1"></script>
+<script src="./editorial-traffic.js"></script>
   <script src="./media-v34.js"></script>
   <script src="./map-zoom.js"></script>
 <script src="./guia.js"></script>
