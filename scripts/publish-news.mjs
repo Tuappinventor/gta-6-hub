@@ -5,8 +5,9 @@ import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'node:crypto';
 import { translatePublishedArticles } from './translate-articles.mjs';
 import { startAutomation } from './automation-logger.mjs';
+import { findNews, hasRecentEvidence, isRecent, readOriginal } from './news-sources.mjs';
 
-// VICE HUB AutoNews 3.6
+// VICE HUB AutoNews 3.7
 // Generación de noticias y seguimiento de actividad.
 
 const MODEL =
@@ -41,7 +42,9 @@ async function main() {
   );
 
   const ai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
+    apiKey: process.env.OPENAI_API_KEY,
+    timeout: 45000,
+    maxRetries: 1
   });
 
   try {
@@ -53,20 +56,9 @@ async function main() {
   const parser = new Parser({
     timeout: 12000,
     headers: {
-      'User-Agent': 'VICEHUB-AutoNews/3.3'
+      'User-Agent': 'VICEHUB-AutoNews/3.7'
     }
   });
-
-  const feeds = [
-    {
-      name: 'Google News · GTA VI',
-      url: 'https://news.google.com/rss/search?q=%22GTA+6%22+OR+%22GTA+VI%22&hl=es&gl=ES&ceid=ES:es'
-    },
-    {
-      name: 'Google News · Rockstar GTA VI',
-      url: 'https://news.google.com/rss/search?q=%22Rockstar+Games%22+%22GTA+VI%22&hl=en&gl=US&ceid=US:en'
-    }
-  ];
 
   const hash = s =>
     createHash('sha256')
@@ -82,28 +74,6 @@ async function main() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
       .slice(0, 105);
-
-  function validUrl(s) {
-    try {
-      const u = new URL(s);
-
-      return ['https:', 'http:']
-        .includes(u.protocol)
-        ? u.href
-        : '';
-    } catch {
-      return '';
-    }
-  }
-
-  const stripHtml = s =>
-    String(s || '')
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&(?:nbsp|amp|quot|lt|gt);/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
 
   const wait = ms =>
     new Promise(resolve =>
@@ -149,7 +119,7 @@ async function main() {
   });
 
   console.log(
-    `AutoNews 3.6 · Publicadas hoy: ${
+    `AutoNews 3.7 · Publicadas hoy: ${
       count || 0
     }; disponibles: ${remaining}`
   );
@@ -167,194 +137,15 @@ async function main() {
     return;
   }
 
-  // ========================================
-  // RECUPERAR ARTÍCULO ORIGINAL
-  // ========================================
+  const { items, feedsOk, feedsFailed } = await findNews(parser, now);
 
-  async function fetchOriginal(url) {
-
-    try {
-
-      const controller =
-        new AbortController();
-
-      const timer = setTimeout(
-        () => controller.abort(),
-        9000
-      );
-
-      let response;
-
-      try {
-
-        response = await fetch(url, {
-          signal: controller.signal,
-          redirect: 'follow',
-          headers: {
-            'User-Agent':
-              'Mozilla/5.0 (compatible; VICEHUB/3.3)',
-            Accept: 'text/html'
-          }
-        });
-
-      } finally {
-        clearTimeout(timer);
-      }
-
-      if (!response.ok) return null;
-
-      const finalUrl =
-        validUrl(response.url);
-
-      if (
-        !finalUrl ||
-        /(^|\.)news\.google\.com$/i.test(
-          new URL(finalUrl).hostname
-        )
-      ) {
-        return null;
-      }
-
-      if (
-        !String(
-          response.headers.get(
-            'content-type'
-          ) || ''
-        ).includes('text/html')
-      ) {
-        return null;
-      }
-
-      const html =
-        (await response.text())
-          .slice(0, 350000);
-
-      const title = stripHtml(
-        html.match(
-          /<title[^>]*>([\s\S]*?)<\/title>/i
-        )?.[1] || ''
-      );
-
-      const description = stripHtml(
-        html.match(
-          /<meta\s+[^>]*name=["']description["'][^>]*content=["']([^"']+)/i
-        )?.[1] || ''
-      );
-
-      const text = stripHtml(
-        html.replace(
-          /<(?:header|footer|nav|aside)[\s\S]*?<\/(?:header|footer|nav|aside)>/gi,
-          ' '
-        )
-      ).slice(0, 14000);
-
-      if (text.length < 450) {
-        return null;
-      }
-
-      return {
-        url: finalUrl,
-        title,
-        description,
-        text
-      };
-
-    } catch (error) {
-
-      console.warn(
-        `Artículo original no accesible: ${
-          error.message
-        }`
-      );
-
-      return null;
-    }
-  }
-
-  // ========================================
-  // CONSULTAR FUENTES RSS
-  // ========================================
-
-  const items = [];
-
-  let feedsOk = 0;
-  let feedsFailed = 0;
   let duplicates = 0;
   let discarded = 0;
   let originalsRecovered = 0;
-
-  for (const feed of feeds) {
-
-    try {
-
-      const parsed =
-        await parser.parseURL(feed.url);
-
-      for (const entry of parsed.items || []) {
-
-        const date = new Date(
-          entry.isoDate ||
-          entry.pubDate ||
-          ''
-        );
-
-        const url =
-          validUrl(entry.link || '');
-
-        if (
-          !url ||
-          !Number.isFinite(date.getTime())
-        ) {
-          continue;
-        }
-
-        if (
-          date.getTime() > now + 3600000 ||
-          now - date.getTime() >
-            48 * 3600000
-        ) {
-          continue;
-        }
-
-        const title =
-          stripHtml(entry.title)
-            .slice(0, 300);
-
-        if (
-          !/\b(gta\s*(?:6|vi)|grand theft auto\s*(?:6|vi))\b/i.test(title)
-        ) {
-          continue;
-        }
-
-        items.push({
-          title,
-          url,
-          excerpt: stripHtml(
-            entry.contentSnippet ||
-            entry.content
-          ).slice(0, 1800),
-          date: date.toISOString(),
-          feed: feed.name
-        });
-      }
-
-      feedsOk++;
-
-      console.log(
-        `RSS leído: ${feed.name}`
-      );
-
-    } catch (error) {
-
-      feedsFailed++;
-
-      console.warn(
-        `RSS no disponible: ${
-          feed.name
-        }: ${error.message}`
-      );
-    }
-  }
+  let sourcesUnverified = 0;
+  let sourcesChecked = 0;
+  let eventsUnverified = 0;
+  let communityDrafts = 0;
 
   logger.set(
     'articles_detected',
@@ -362,17 +153,23 @@ async function main() {
   );
 
   logger.setMetadata({
-    rss_entries: items.length,
+    source_candidates: items.length,
     feeds_ok: feedsOk,
     feeds_failed: feedsFailed
   });
 
   await logger.checkpoint();
 
-  items.sort((a, b) =>
-    b.date.localeCompare(a.date)
-  );
+  items.sort((a, b) => b.date.localeCompare(a.date));
 
+  // Check a community post before an automatic publication ends the run.
+  const press = items.filter(item => !item.community);
+  const communityFeature = press.find(item => item.communityCandidate);
+  const candidates = [
+    ...items.filter(item => item.community),
+    ...(communityFeature ? [communityFeature] : []),
+    ...press.filter(item => item !== communityFeature)
+  ];
   const seen = new Set();
 
   let published = 0;
@@ -380,6 +177,7 @@ async function main() {
   let calls = 0;
 
   const maxCalls = 3;
+  let communityReviewed = false;
 
   // ========================================
   // CATEGORÍAS
@@ -486,17 +284,46 @@ ESTILO:
 
 FUENTES Y VERIFICACIÓN:
 
-Dispones de una entrada RSS y, cuando existe,
-del texto recuperado del artículo original.
+Dispones del texto de la fuente original y su fecha
+de publicación. El título y el extracto de búsqueda
+solo sirven para orientar; no son pruebas.
 
-El RSS de Google News NO es una fuente primaria.
+Identifica un acontecimiento nuevo de GTA VI en el
+intervalo indicado y su fecha (event_date, YYYY-MM-DD).
+Cita un fragmento literal y continuo del texto original
+(event_evidence) que respalde el acontecimiento y su
+fecha, sea explícita o relativa a la fecha de la fuente
+(por ejemplo, «hoy» o «ayer»). Si no puedes fecharlo,
+si es un recopilatorio, una guía, información reutilizada
+o un artículo reciente sobre un hecho antiguo, devuelve
+decision="skip". Una republicación o una edición posterior
+no modifica la fecha del hecho. Una novedad revelada por
+primera vez por la propia fuente puede llevar la fecha
+de esa revelación si el texto lo dice claramente.
 
-Si no hay artículo original accesible,
-debes marcar decision="draft".
+COMUNIDAD:
+Busca una anécdota concreta y entretenida de GTA VI,
+como un clip, una acrobacia, un reto, un fallo divertido,
+un hallazgo o una creación de jugadores.
+Rechaza promociones, opiniones genéricas, memes sin una
+historia detrás, contenido reutilizado y capturas de otros
+GTA presentadas como GTA VI. No deduzcas que hubo una
+anécdota solo porque el titular mencione «jugadores».
 
-No afirmes que has contrastado varias fuentes:
-solo se proporciona una fuente y no existe
-corroboración independiente.
+Si la fuente es una publicación social, evalúa el texto
+de quien la publicó y las descripciones de los adjuntos.
+No afirmes que viste las imágenes o el vídeo. Si el texto
+describe un momento específico y la persona se atribuye
+la partida o la creación, puedes fechar el acto de compartir
+el material original en el día de su publicación. Cuenta
+qué compartió y atribúyelo a su autor sin dar una fecha
+a la partida que no conste. Omite reposts, especulaciones
+y material sin contexto.
+
+En una historia de jugadores, marca community_story=true,
+decision="draft" y añade la categoría «curiosidades».
+No afirmes que has contrastado varias fuentes: solo se
+proporciona una y no existe corroboración independiente.
 
 Si una noticia incluye cifras económicas,
 fechas de lanzamiento, ventas, filtraciones,
@@ -556,6 +383,9 @@ Devuelve exclusivamente JSON válido:
 
 {
   "decision": "publish|draft|skip",
+  "event_date": "YYYY-MM-DD",
+  "event_evidence": "",
+  "community_story": false,
   "title": "",
   "summary": "",
   "body": "",
@@ -586,14 +416,17 @@ de verificación.
   // PROCESAR NOTICIAS NUEVAS
   // ========================================
 
-  for (const item of items) {
+  for (const item of candidates) {
 
     if (
       published >= Math.min(1, remaining) ||
-      calls >= maxCalls
+      calls >= maxCalls ||
+      sourcesChecked >= 24
     ) {
       break;
     }
+
+    if (item.community && communityReviewed) continue;
 
     if (seen.has(item.url)) {
       duplicates++;
@@ -619,15 +452,15 @@ de verificación.
       continue;
     }
 
-    const original =
-      await fetchOriginal(item.url);
-
-    if (original) {
-      originalsRecovered++;
+    sourcesChecked++;
+    const original = await readOriginal(item, now);
+    if (!original) {
+      sourcesUnverified++;
+      continue;
     }
 
-    const sourceUrl =
-      original?.url || item.url;
+    originalsRecovered++;
+    const sourceUrl = original.url;
 
     if (sourceUrl !== item.url) {
 
@@ -650,6 +483,7 @@ de verificación.
     }
 
     calls++;
+    if (item.community) communityReviewed = true;
 
     logger.apiCall();
 
@@ -678,7 +512,12 @@ de verificación.
             {
               role: 'user',
               content: JSON.stringify({
-                rss: item,
+                candidate: {
+                  title: item.title,
+                  communitySource: Boolean(item.community),
+                  possibleCommunityStory: item.communityCandidate
+                },
+                windowEnd: new Date(now).toISOString(),
                 original
               })
             }
@@ -731,6 +570,14 @@ de verificación.
       continue;
     }
 
+    const communityStory = result.community_story === true;
+    if ((item.community && !communityStory) ||
+        !isRecent(original.date, Date.now()) ||
+        !hasRecentEvidence(result, original, now)) {
+      eventsUnverified++;
+      continue;
+    }
+
     const title =
       String(result.title || '')
         .trim()
@@ -762,6 +609,7 @@ de verificación.
     }
 
     const proposedCategories = [
+      ...(communityStory ? ['curiosidades'] : []),
       result.category,
       ...(Array.isArray(result.categories)
         ? result.categories
@@ -801,10 +649,7 @@ de verificación.
       )
     ].slice(0, 8);
 
-    const hostname = original
-      ? new URL(original.url)
-          .hostname.toLowerCase()
-      : '';
+    const hostname = new URL(sourceUrl).hostname.toLowerCase();
 
     const officialDomain =
       hostname === 'rockstargames.com' ||
@@ -814,8 +659,7 @@ de verificación.
       officialDomain &&
       result.verification_level === 'official'
         ? 'official'
-        : original &&
-          result.verification_level !== 'unverified'
+        : !item.community && result.verification_level === 'secondary'
           ? 'secondary'
           : 'unverified';
 
@@ -826,7 +670,7 @@ de verificación.
 
     const safeToPublish =
       result.decision === 'publish' &&
-      !!original &&
+      !communityStory &&
       !suspicious &&
       !['rumores', 'filtraciones']
         .includes(category) &&
@@ -857,9 +701,9 @@ de verificación.
 
       source_url: sourceUrl,
 
-      source_name: original
-        ? new URL(original.url).hostname
-        : item.feed,
+      source_name: item.community || item.publisherHost
+        ? item.sourceName
+        : hostname,
 
       verification_level,
 
@@ -872,16 +716,9 @@ de verificación.
       featured: false,
 
       verification_notes:
-        `AutoNews 3.3 · ${
-          String(
-            result.reason ||
-            'Revisión pendiente'
-          ).slice(0, 600)
-        } · Artículo original: ${
-          original
-            ? 'recuperado'
-            : 'no accesible'
-        } · Corroboración independiente: no realizada`
+        `AutoNews 3.7 · Hecho: ${result.event_date} · Fuente: ${original.date} · ${
+          communityStory ? 'Historia de la comunidad · ' : ''
+        }${String(result.reason || 'Revisión pendiente').slice(0, 500)} · Corroboración independiente: no realizada`
     };
 
     const { error } = await db
@@ -910,6 +747,7 @@ de verificación.
     } else {
 
       drafts++;
+      if (communityStory) communityDrafts++;
 
       logger.increment(
         'drafts_created'
@@ -932,6 +770,9 @@ de verificación.
   logger.setMetadata({
     duplicates,
     discarded,
+    sources_unverified_or_stale: sourcesUnverified,
+    events_unverified_or_stale: eventsUnverified,
+    community_drafts: communityDrafts,
     originals_recovered:
       originalsRecovered,
     published_today_after:
@@ -943,7 +784,7 @@ de verificación.
       drafts
     } borradores; ${
       items.length
-    } entradas RSS; ${
+    } candidatas; ${
       calls
     } llamadas IA`;
 
@@ -952,7 +793,7 @@ de verificación.
   if (feedsOk === 0) {
 
     throw new Error(
-      'No se pudo consultar ninguna fuente RSS.'
+      'No se pudo consultar ninguna fuente de noticias.'
     );
 
   } else if (!calls && !published && !drafts) {
